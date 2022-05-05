@@ -17,6 +17,9 @@ class CreateSceneOP(Operator):
             bpy.data.objects.remove(obj)
 
         create_camera(Data.json['camera'])
+
+        import_hdri(Data.json['environment'])
+
         return {'FINISHED'}
 
 def register():
