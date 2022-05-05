@@ -30,6 +30,8 @@ def load_glb(url):
         request.urlretrieve(url, os.path.abspath(tmp_filename))
         #import glb file
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
+        #set object origin
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
         #handle to active object
         glb = bpy.context.view_layer.objects.active
         #remove local temp file
@@ -54,10 +56,11 @@ def create_camera(data):
 
     # Set location
     camera.location.x = data['position']['x']
-    camera.location.y = data['position']['z']
+    camera.location.y = -data['position']['z']
     camera.location.z = data['position']['y']
 
     # Set rotation
+    camera.rotation_euler[0] += math.radians(90)
     camera.rotation_euler[0] += data['rotation']['_x']
     camera.rotation_euler[1] += data['rotation']['_z']
     camera.rotation_euler[2] += data['rotation']['_y']
@@ -107,11 +110,20 @@ def import_glb(data):
 
     # Set location
     obj.location.x = data['position'][0]
-    obj.location.y = data['position'][2]
+    obj.location.y = -data['position'][2]
     obj.location.z = data['position'][1]
+
+    # Sets rotation mode to XYZ
+    obj.rotation_mode = 'XYZ'
 
     # Set Rotation
     obj.rotation_euler[0] = data['rotation'][0]
     obj.rotation_euler[1] = data['rotation'][2]
     obj.rotation_euler[2] = data['rotation'][1]
+
+    # Set scale
+    obj.scale.x = data['scale'][0]
+    obj.scale.y = data['scale'][2]
+    obj.scale.z = data['scale'][1]
+
 
