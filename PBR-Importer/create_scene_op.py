@@ -20,6 +20,9 @@ class CreateSceneOP(Operator):
 
         import_hdri(Data.json['environment'])
 
+        for i in Data.json['objects']:
+            import_glb(i)
+
         return {'FINISHED'}
 
 def register():

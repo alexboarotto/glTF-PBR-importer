@@ -15,12 +15,32 @@ def load_image(url, isHDRI = False):
         #pack the image in the blender file so...
         img.pack()
         #...we can delete the temp image
-        os.remove(tmp_filename)
+        os.remove(os.path.abspath(tmp_filename))
     except Exception as e:
         raise NameError("Cannot load image: {0}".format(e))
 
     return img
 
+def load_glb(url):
+    glb = None
+    try:
+        #make a temp filename that is valid
+        tmp_filename = "./temp.glb"
+        #fetch the file
+        request.urlretrieve(url, os.path.abspath(tmp_filename))
+        #import glb file
+        bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
+        #handle to active object
+        glb = bpy.context.view_layer.objects.active
+        #remove local temp file
+        os.remove(os.path.abspath(tmp_filename))
+    except Exception as e:
+        raise NameError("Cannot load file: {0}".format(e))
+
+    return glb
+
+
+"""Creates Camera object from data in json"""
 def create_camera(data):
     name = "Camera"
 
@@ -29,25 +49,29 @@ def create_camera(data):
     camera_object = bpy.data.objects.new(name, camera_data)
     bpy.context.scene.collection.objects.link(camera_object)
 
+    # Handle to camera
+    camera = bpy.data.objects[name]
+
     # Set location
-    bpy.data.objects[name].location.x = data['position']['x']
-    bpy.data.objects[name].location.y = data['position']['y']
-    bpy.data.objects[name].location.z = data['position']['z']
+    camera.location.x = data['position']['x']
+    camera.location.y = data['position']['z']
+    camera.location.z = data['position']['y']
 
     # Set rotation
-    bpy.data.objects[name].rotation_euler[0] = data['rotation']['_x']
-    bpy.data.objects[name].rotation_euler[1] = data['rotation']['_y']
-    bpy.data.objects[name].rotation_euler[2] = data['rotation']['_z']
+    camera.rotation_euler[0] += data['rotation']['_x']
+    camera.rotation_euler[1] += data['rotation']['_z']
+    camera.rotation_euler[2] += data['rotation']['_y']
 
     # Set FOV
-    bpy.data.objects[name].data.lens_unit = 'FOV'
-    bpy.data.objects[name].data.angle = math.radians(data['object']['fov']) 
+    camera.data.lens_unit = 'FOV'
+    camera.data.angle = math.radians(data['object']['fov']) 
 
     # Sets focus distance
-    bpy.data.objects[name].data.dof.use_dof = True 
-    bpy.data.objects[name].data.dof.focus_distance = data['object']['focus'] 
+    camera.data.dof.use_dof = True 
+    camera.data.dof.focus_distance = data['object']['focus'] 
 
 
+"""Imports hdri file and sets it as background"""
 def import_hdri(url):
     # Get the environment node tree of the current scene
     node_tree = bpy.context.scene.world.node_tree
@@ -73,3 +97,21 @@ def import_hdri(url):
     links = node_tree.links
     link = links.new(node_environment.outputs["Color"], node_background.inputs["Color"])
     link = links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
+
+"""Import glb object with properties from json"""
+def import_glb(data):
+    obj = load_glb(data['files']['gltf_original'])
+
+    # Sets object name
+    obj.name = data['name']
+
+    # Set location
+    obj.location.x = data['position'][0]
+    obj.location.y = data['position'][2]
+    obj.location.z = data['position'][1]
+
+    # Set Rotation
+    obj.rotation_euler[0] = data['rotation'][0]
+    obj.rotation_euler[1] = data['rotation'][2]
+    obj.rotation_euler[2] = data['rotation'][1]
+
