@@ -18,6 +18,7 @@ class PBRImportPanel(bpy.types.Panel):
         scene = context.scene
 
         layout.operator("pbr_import.import_json", text = "Import JSON")
+        layout.operator("pbr_import.create_scene", text = "Create Scene")
 
 
 def register():
