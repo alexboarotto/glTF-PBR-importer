@@ -42,6 +42,22 @@ def load_glb(url):
     return glb
 
 
+def create_light(data):
+    # Create light datablock
+    light_data = bpy.data.lights.new(name="light-data", type='POINT')
+    light_data.energy = 100*data['object']['intensity']
+
+    # Create new object, pass the light data 
+    light_object = bpy.data.objects.new(name=data['object']['name'], object_data=light_data)
+
+    # Link object to collection in context
+    bpy.context.collection.objects.link(light_object)
+
+    # Change light position
+    light_object.location.x = data['position']['x']
+    light_object.location.y = -data['position']['z']
+    light_object.location.z = data['position']['y']
+
 """Creates Camera object from data in json"""
 def create_camera(data):
     name = "Camera"
@@ -147,6 +163,8 @@ def create_plane(data):
 
 """Creates Principled BSDF Material and assigns textures from json"""
 def create_material(files, obj, size):
+    if len(obj.data.materials) >= 1:
+        obj.data.materials.pop(index = 0)
     mat = bpy.data.materials.new(name=obj.name) #set new material to variable
     mat.use_nodes = True
 
@@ -162,28 +180,41 @@ def create_material(files, obj, size):
     # Handle to shader node
     shader = nodes.new(type='ShaderNodeBsdfPrincipled')
 
+    color = None
+    displacement = None
+    normal = None
+    roughness = None
+
     # Handle to color texture
-    color = nodes.new(type='ShaderNodeTexImage')
-    color.image = load_image(files[size+'_color'])
+    if size+'_color' in files:
+        color = nodes.new(type='ShaderNodeTexImage')
+        color.image = load_image(files[size+'_color'])
 
     # Handle to displacement texture
-    #displacement = nodes.new(type='ShaderNodeTexImage')
-    #displacement.image = load_image(files[size+'_displacement'])
+    if size+'_displacement' in files:
+        displacement = nodes.new(type='ShaderNodeTexImage')
+        displacement.image = load_image(files[size+'_displacement'])
 
     # Handle to normal texture
-    normal = nodes.new(type='ShaderNodeTexImage')
-    normal.image = load_image(files[size+'_normal'])
+    if size+'_normal' in files:
+        normal = nodes.new(type='ShaderNodeTexImage')
+        normal.image = load_image(files[size+'_normal'])
 
     # Handle to roughness texture
-    #roughness = nodes.new(type='ShaderNodeTexImage')
-    #roughness.image = load_image(files[size+'_roughness'])
+    if size+'_roughness' in files:
+        roughness = nodes.new(type='ShaderNodeTexImage')
+        roughness.image = load_image(files[size+'_roughness'])
 
     # Links
-    links.new(color.outputs["Color"], shader.inputs["Base Color"])
-    links.new(normal.outputs["Color"], shader.inputs["Normal"])
-    #links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
+    if not color == None:
+        links.new(color.outputs["Color"], shader.inputs["Base Color"])
+    if not normal == None:    
+        links.new(normal.outputs["Color"], shader.inputs["Normal"])
+    if not roughness == None:
+        links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
+    if not displacement == None:
+        links.new(displacement.outputs["Color"], output.inputs["Displacement"])
 
-    #links.new(displacement.outputs["Color"], output.inputs["Displacement"])
     links.new(shader.outputs["BSDF"], output.inputs["Surface"])
 
     obj.data.materials.append(mat) #add the material to the object

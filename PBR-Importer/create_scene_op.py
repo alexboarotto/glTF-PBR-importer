@@ -19,6 +19,9 @@ class CreateSceneOP(Operator):
         # Create camera
         create_camera(Data.json['camera'])
 
+        # Create light
+        create_light(Data.json['light'])
+
         # Import HDRI image as enviroment
         import_hdri(Data.json['environment'])
 
