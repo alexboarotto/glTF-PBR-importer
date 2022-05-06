@@ -98,8 +98,8 @@ def import_hdri(url):
 
     # Link all nodes
     links = node_tree.links
-    link = links.new(node_environment.outputs["Color"], node_background.inputs["Color"])
-    link = links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
+    links.new(node_environment.outputs["Color"], node_background.inputs["Color"])
+    links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
 
 """Import glb object with properties from json"""
 def import_glb(data):
@@ -107,6 +107,9 @@ def import_glb(data):
 
     # Sets object name
     obj.name = data['name']
+
+    # Create Material
+    create_material(data['materialData']['files'], obj, 'small')
 
     # Set location
     obj.location.x = data['position'][0]
@@ -127,3 +130,60 @@ def import_glb(data):
     obj.scale.z = data['scale'][1]
 
 
+"""Creates a plane which represents the floor"""
+def create_plane(data):
+    # Create plane
+    bpy.ops.mesh.primitive_plane_add(size = 100)
+
+    # Handle to floor
+    floor = bpy.context.view_layer.objects.active
+
+    # Set floor name
+    floor.name = data['name']
+
+    # Create material
+    create_material(data['files'], floor, 'large')
+    
+
+"""Creates Principled BSDF Material and assigns textures from json"""
+def create_material(files, obj, size):
+    mat = bpy.data.materials.new(name=obj.name) #set new material to variable
+    mat.use_nodes = True
+
+    # Clear nodes
+    if mat.node_tree:
+        mat.node_tree.links.clear()
+        mat.node_tree.nodes.clear()
+
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+
+    # Handle to shader node
+    shader = nodes.new(type='ShaderNodeBsdfPrincipled')
+
+    # Handle to color texture
+    color = nodes.new(type='ShaderNodeTexImage')
+    color.image = load_image(files[size+'_color'])
+
+    # Handle to displacement texture
+    #displacement = nodes.new(type='ShaderNodeTexImage')
+    #displacement.image = load_image(files[size+'_displacement'])
+
+    # Handle to normal texture
+    normal = nodes.new(type='ShaderNodeTexImage')
+    normal.image = load_image(files[size+'_normal'])
+
+    # Handle to roughness texture
+    #roughness = nodes.new(type='ShaderNodeTexImage')
+    #roughness.image = load_image(files[size+'_roughness'])
+
+    # Links
+    links.new(color.outputs["Color"], shader.inputs["Base Color"])
+    links.new(normal.outputs["Color"], shader.inputs["Normal"])
+    #links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
+
+    #links.new(displacement.outputs["Color"], output.inputs["Displacement"])
+    links.new(shader.outputs["BSDF"], output.inputs["Surface"])
+
+    obj.data.materials.append(mat) #add the material to the object

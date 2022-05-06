@@ -16,12 +16,18 @@ class CreateSceneOP(Operator):
         for obj in bpy.data.objects:
             bpy.data.objects.remove(obj)
 
+        # Create camera
         create_camera(Data.json['camera'])
 
+        # Import HDRI image as enviroment
         import_hdri(Data.json['environment'])
 
+        # Import all objects
         for i in Data.json['objects']:
             import_glb(i)
+
+        # Create floor
+        create_plane(Data.json['floor'])
 
         return {'FINISHED'}
 
