@@ -2,6 +2,10 @@ import bpy, os
 from urllib import request 
 import math
 
+def hex_to_rgb(value):
+    lv = len(value)
+    return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
 def load_image(url, isHDRI = False):
     img = None
     # Load image file from url.    
@@ -45,7 +49,19 @@ def load_glb(url):
 def create_light(data):
     # Create light datablock
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
-    light_data.energy = 100*data['object']['intensity']
+
+    # Set light intensity
+    light_data.energy = 10*data['object']['intensity']
+
+    # Set light radius
+    light_data.shadow_soft_size = 1
+
+    # Create color RGB list from hex value 
+    color = hex_to_rgb(str(data['object']['color']))
+    color.pop()
+
+    # Set color
+    light_data.color = color
 
     # Create new object, pass the light data 
     light_object = bpy.data.objects.new(name=data['object']['name'], object_data=light_data)
@@ -106,11 +122,9 @@ def import_hdri(url):
     node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
     # Load and assign the image to the node property
     node_environment.image = load_image(url, isHDRI=True) # Relative path
-    node_environment.location = -300,0
 
     # Add Output node
     node_output = tree_nodes.new(type='ShaderNodeOutputWorld')   
-    node_output.location = 200,0
 
     # Link all nodes
     links = node_tree.links
@@ -125,7 +139,7 @@ def import_glb(data):
     obj.name = data['name']
 
     # Create Material
-    create_material(data['materialData']['files'], obj, 'small')
+    create_material(data['materialData']['files'], obj, 'small', data['materialData']['materialProps'])
 
     # Set location
     obj.location.x = data['position'][0]
@@ -158,11 +172,11 @@ def create_plane(data):
     floor.name = data['name']
 
     # Create material
-    create_material(data['files'], floor, 'large')
+    create_material(data['files'], floor, 'large', data['materialProps'])
     
 
 """Creates Principled BSDF Material and assigns textures from json"""
-def create_material(files, obj, size):
+def create_material(files, obj, size, materialProps):
     if len(obj.data.materials) >= 1:
         obj.data.materials.pop(index = 0)
     mat = bpy.data.materials.new(name=obj.name) #set new material to variable
@@ -180,6 +194,19 @@ def create_material(files, obj, size):
     # Handle to shader node
     shader = nodes.new(type='ShaderNodeBsdfPrincipled')
 
+    # Assign material props
+    if 'clearcoat' in materialProps:
+        shader.inputs['Clearcoat'].default_value = materialProps['clearcoat']
+    if 'clearcoatRoughness' in materialProps:
+        shader.inputs['Clearcoat Roughness'].default_value = materialProps['clearcoatRoughness']
+    if 'ior' in materialProps:
+        shader.inputs['IOR'].default_value = materialProps['ior']
+    if 'metalness' in materialProps:
+        shader.inputs['Metallic'].default_value = materialProps['metalness']
+    if 'transmission' in materialProps:
+        shader.inputs['Transmission'].default_value = materialProps['transmission']
+
+    # Initialize texture variables
     color = None
     displacement = None
     normal = None
