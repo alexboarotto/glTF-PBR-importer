@@ -92,7 +92,7 @@ def create_camera(data):
     camera.location.z = data['position']['y']
 
     # Set rotation mode
-    camera.rotation_mode = 'XZY'
+    camera.rotation_mode = 'ZYX'
 
     # Set rotation
     camera.rotation_euler[0] = math.radians(90)
@@ -142,7 +142,7 @@ def import_glb(data):
     obj.name = data['name']
 
     # Create Material
-    create_material(data['materialData']['files'], obj, 'small', data['materialData']['materialProps'])
+    create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
 
     # Set location
     obj.location.x = data['position'][0]
@@ -166,7 +166,7 @@ def import_glb(data):
 """Creates a plane which represents the floor"""
 def create_plane(data):
     # Create plane
-    bpy.ops.mesh.primitive_plane_add(size = 100)
+    bpy.ops.mesh.primitive_plane_add(size = 200)
 
     # Handle to floor
     floor = bpy.context.view_layer.objects.active
