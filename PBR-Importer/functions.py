@@ -91,11 +91,14 @@ def create_camera(data):
     camera.location.y = -data['position']['z']
     camera.location.z = data['position']['y']
 
+    # Set rotation mode
+    camera.rotation_mode = 'XZY'
+
     # Set rotation
-    camera.rotation_euler[0] += math.radians(90)
+    camera.rotation_euler[0] = math.radians(90)
     camera.rotation_euler[0] += data['rotation']['_x']
-    camera.rotation_euler[1] += data['rotation']['_z']
-    camera.rotation_euler[2] += data['rotation']['_y']
+    camera.rotation_euler[1] += data['rotation']['_y']
+    camera.rotation_euler[2] += data['rotation']['_z']
 
     # Set FOV
     camera.data.lens_unit = 'FOV'
