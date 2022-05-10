@@ -17,7 +17,10 @@ class PBRImportPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
 
+        # Draw import button (will allow user to select json file)
         layout.operator("pbr_import.import_json", text = "Import JSON")
+
+        # Draw Create scene button (deletes all current objects and imports all objects and data from json file into the scene)
         layout.operator("pbr_import.create_scene", text = "Create Scene")
 
 

@@ -11,16 +11,21 @@ def load_image(url, isHDRI = False):
     img = None
     # Load image file from url.    
     try:
-        #make a temp filename that is valid
+        # Make a temp filename that is valid
         tmp_filename = "./temp." + "pic" if isHDRI else "png"
-        #fetch the image in this file
+
+        # Fetch the image in this file
         request.urlretrieve(url, os.path.abspath(tmp_filename))
-        #create a blender datablock of it
+
+        # Create a blender datablock of it
         img = bpy.data.images.load(os.path.abspath(tmp_filename))
-        #pack the image in the blender file so...
+
+        # Pack the image in the blender file
         img.pack()
-        #...we can delete the temp image
+
+        # Delete the temp image from local directory
         os.remove(os.path.abspath(tmp_filename))
+
     except Exception as e:
         raise NameError("Cannot load image: {0}".format(e))
 
@@ -29,24 +34,30 @@ def load_image(url, isHDRI = False):
 def load_glb(url):
     glb = None
     try:
-        #make a temp filename that is valid
+        # Make a temp filename that is valid
         tmp_filename = "./temp.glb"
-        #fetch the file
+
+        # Fetch the file
         request.urlretrieve(url, os.path.abspath(tmp_filename))
-        #import glb file
+
+        # Import glb file
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
-        #set object origin
+
+        # Set object origin
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
-        #handle to active object
+
+        # Handle to active object
         glb = bpy.context.view_layer.objects.active
-        #remove local temp file
+
+        # Remove local temp file
         os.remove(os.path.abspath(tmp_filename))
+
     except Exception as e:
         raise NameError("Cannot load file: {0}".format(e))
 
     return glb
 
-
+"""Creates Light from data in json"""
 def create_light(data):
     # Create light datablock
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
