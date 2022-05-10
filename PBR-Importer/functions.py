@@ -1,3 +1,4 @@
+from unicodedata import name
 import bpy, os
 from urllib import request 
 import math
@@ -166,7 +167,7 @@ def import_glb(data):
 """Creates a plane which represents the floor"""
 def create_plane(data):
     # Create plane
-    bpy.ops.mesh.primitive_plane_add(size = 200)
+    bpy.ops.mesh.primitive_plane_add(size = 50)
 
     # Handle to floor
     floor = bpy.context.view_layer.objects.active
@@ -176,6 +177,20 @@ def create_plane(data):
 
     # Create material
     create_material(data['files'], floor, 'large', data['materialProps'])
+
+    bpy.ops.object.modifier_add(type='ARRAY')
+    floor.modifiers[0].relative_offset_displace[0] = 1
+    
+    bpy.ops.object.modifier_add(type='ARRAY')
+    floor.modifiers[1].relative_offset_displace[0] = 0
+    floor.modifiers[1].relative_offset_displace[1] = 1
+    
+    bpy.ops.object.modifier_add(type='ARRAY')
+    floor.modifiers[2].relative_offset_displace[0] = -1
+    
+    bpy.ops.object.modifier_add(type='ARRAY')
+    floor.modifiers[3].relative_offset_displace[0] = 0
+    floor.modifiers[3].relative_offset_displace[1] = -1
     
 
 """Creates Principled BSDF Material and assigns textures from json"""
