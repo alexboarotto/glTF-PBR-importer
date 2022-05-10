@@ -52,7 +52,7 @@ def create_light(data):
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
 
     # Set light intensity
-    light_data.energy = 10*data['object']['intensity']
+    light_data.energy = 100*data['object']['intensity']
 
     # Set light radius
     light_data.shadow_soft_size = 1
