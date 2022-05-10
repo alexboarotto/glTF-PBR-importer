@@ -212,6 +212,12 @@ def create_material(files, obj, size, materialProps):
     # Handle to shader node
     shader = nodes.new(type='ShaderNodeBsdfPrincipled')
 
+    # Handle to normal map node
+    normal_map = nodes.new(type='ShaderNodeNormalMap')
+
+    # Handle to displacement node
+    displacement_map = nodes.new(type='ShaderNodeDisplacement')
+
     # Assign material props
     if 'clearcoat' in materialProps:
         shader.inputs['Clearcoat'].default_value = materialProps['clearcoat']
@@ -244,21 +250,25 @@ def create_material(files, obj, size, materialProps):
     if size+'_normal' in files:
         normal = nodes.new(type='ShaderNodeTexImage')
         normal.image = load_image(files[size+'_normal'])
+        normal.image.colorspace_settings.name = 'Non-Color'
 
     # Handle to roughness texture
     if size+'_roughness' in files:
         roughness = nodes.new(type='ShaderNodeTexImage')
         roughness.image = load_image(files[size+'_roughness'])
+        roughness.image.colorspace_settings.name = 'Non-Color'
 
     # Links
-    if not color == None:
+    if color is not None:
         links.new(color.outputs["Color"], shader.inputs["Base Color"])
-    if not normal == None:    
-        links.new(normal.outputs["Color"], shader.inputs["Normal"])
-    if not roughness == None:
+    if normal is not None:    
+        links.new(normal.outputs["Color"], normal_map.inputs["Color"])
+        links.new(normal_map.outputs["Normal"], shader.inputs["Normal"])
+    if roughness is not None:
         links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
-    if not displacement == None:
-        links.new(displacement.outputs["Color"], output.inputs["Displacement"])
+    if displacement is not None:
+        links.new(displacement.outputs["Color"], displacement_map.inputs["Height"])
+        links.new(displacement_map.outputs["Displacement"], output.inputs["Displacement"])
 
     links.new(shader.outputs["BSDF"], output.inputs["Surface"])
 
