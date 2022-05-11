@@ -1,6 +1,5 @@
 import bpy
 
-
 class PBRImportPanel(bpy.types.Panel):
     bl_idname = "SCENE_PT_pbr_import"
     bl_label = ""

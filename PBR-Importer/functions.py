@@ -1,11 +1,15 @@
-from unicodedata import name
 import bpy, os
+from mathutils import Matrix
 from urllib import request 
 import math
 
 def hex_to_rgb(value):
     lv = len(value)
     return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+def rotate_object(obj, angle_degrees, axis='Z'):
+    # local rotation about axis
+    obj.rotation_euler = (obj.rotation_euler.to_matrix() @ Matrix.Rotation(math.radians(angle_degrees), 3, axis)).to_euler()
 
 def load_image(url, isHDRI = False):
     img = None
@@ -146,6 +150,7 @@ def import_hdri(url):
     links.new(node_environment.outputs["Color"], node_background.inputs["Color"])
     links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
 
+
 """Import glb object with properties from json"""
 def import_glb(data):
     obj = load_glb(data['files']['gltf_original'])
@@ -154,7 +159,8 @@ def import_glb(data):
     obj.name = data['name']
 
     # Create Material
-    create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
+    if 'files' in data['materialData']:
+        create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
 
     # Set location
     obj.location.x = data['position'][0]
@@ -166,7 +172,7 @@ def import_glb(data):
 
     # Set Rotation
     obj.rotation_euler[0] = data['rotation'][0]
-    obj.rotation_euler[1] = data['rotation'][2]
+    obj.rotation_euler[1] = -data['rotation'][2]
     obj.rotation_euler[2] = data['rotation'][1]
 
     # Set scale
