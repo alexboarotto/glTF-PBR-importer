@@ -25,6 +25,7 @@ In the properties panel open the scene tab. There you will find a Header called 
 - The _Import JSON_ button will open a file browser where you will be able to select the .json file containing the data related to the scene.
 - The _Create Scene_ button will import all objects defined in the json file and their respective textures and material data.
 
+## Rendering
 To Render the scene we may have to chenge some of Blender's render settings. First off let's make sure the **render engine** is set to ***Cycles***. To do so go to the render properties tab and make sure that Cycles is selected in the dropdown menu.
 
 ![image](https://user-images.githubusercontent.com/59767130/167830619-e4896c6d-afc4-4ca2-ad9b-7511ea6db9d2.png)
