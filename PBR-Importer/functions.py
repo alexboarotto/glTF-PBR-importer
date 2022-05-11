@@ -1,5 +1,5 @@
 import bpy, os
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 from urllib import request 
 import math
 
@@ -10,6 +10,15 @@ def hex_to_rgb(value):
 def rotate_object(obj, angle_degrees, axis='Z'):
     # local rotation about axis
     obj.rotation_euler = (obj.rotation_euler.to_matrix() @ Matrix.Rotation(math.radians(angle_degrees), 3, axis)).to_euler()
+
+#Scale a 2D vector v, considering a scale s and a pivot point p
+def Scale2D( v, s, p ):
+    return ( p[0] + s[0]*(v[0] - p[0]), p[1] + s[1]*(v[1] - p[1]) )     
+
+#Scale a UV map iterating over its coordinates to a given scale and with a pivot point
+def ScaleUV( uvMap, scale, pivot ):
+    for uvIndex in range( len(uvMap.data) ):
+        uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
 def load_image(url, isHDRI = False):
     img = None
@@ -184,7 +193,7 @@ def import_glb(data):
 """Creates a plane which represents the floor"""
 def create_plane(data):
     # Create plane
-    bpy.ops.mesh.primitive_plane_add(size = 50)
+    bpy.ops.mesh.primitive_plane_add(size = 200)
 
     # Handle to floor
     floor = bpy.context.view_layer.objects.active
@@ -195,19 +204,15 @@ def create_plane(data):
     # Create material
     create_material(data['files'], floor, 'large', data['materialProps'])
 
-    bpy.ops.object.modifier_add(type='ARRAY')
-    floor.modifiers[0].relative_offset_displace[0] = 1
-    
-    bpy.ops.object.modifier_add(type='ARRAY')
-    floor.modifiers[1].relative_offset_displace[0] = 0
-    floor.modifiers[1].relative_offset_displace[1] = 1
-    
-    bpy.ops.object.modifier_add(type='ARRAY')
-    floor.modifiers[2].relative_offset_displace[0] = -1
-    
-    bpy.ops.object.modifier_add(type='ARRAY')
-    floor.modifiers[3].relative_offset_displace[0] = 0
-    floor.modifiers[3].relative_offset_displace[1] = -1
+    # Defines the pivot and scale
+    pivot = Vector( (0.5, 0.5) )
+    scale = Vector( (3, 3) )
+
+    # Handle to UV map
+    uvMap = floor.data.uv_layers[0]
+
+    if floor is not None:
+        ScaleUV( uvMap, scale, pivot )
     
 
 """Creates Principled BSDF Material and assigns textures from json"""
