@@ -25,12 +25,21 @@ class CreateSceneOP(Operator):
         # Import HDRI image as enviroment
         import_hdri(Data.json['environment'])
 
+        # Create floor
+        create_floor(Data.json['floor'])
+
         # Import all objects
         for i in Data.json['objects']:
-            import_glb(i)
-
-        # Create floor
-        create_plane(Data.json['floor'])
+            if i['name'] == "Sphere":
+                create_sphere(i)
+            if i['name'] == "Cube":
+                create_cube(i)
+            if i['name'] == "Plane":
+                create_plane(i)
+            if i['name'] == "Cylinder":
+                create_cylinder(i)
+            if i['type'] == "gltf":
+                import_glb(i)
 
         return {'FINISHED'}
 

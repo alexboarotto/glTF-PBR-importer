@@ -7,10 +7,6 @@ def hex_to_rgb(value):
     lv = len(value)
     return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
-def rotate_object(obj, angle_degrees, axis='Z'):
-    # local rotation about axis
-    obj.rotation_euler = (obj.rotation_euler.to_matrix() @ Matrix.Rotation(math.radians(angle_degrees), 3, axis)).to_euler()
-
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
     return ( p[0] + s[0]*(v[0] - p[0]), p[1] + s[1]*(v[1] - p[1]) )     
@@ -148,6 +144,7 @@ def import_hdri(url):
 
     # Add Environment Texture node
     node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
+
     # Load and assign the image to the node property
     node_environment.image = load_image(url, isHDRI=True) # Relative path
 
@@ -160,13 +157,33 @@ def import_hdri(url):
     links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
 
 
-"""Import glb object with properties from json"""
-def import_glb(data):
-    obj = load_glb(data['files']['gltf_original'])
+"""Creates a plane which represents the floor"""
+def create_floor(data):
+    # Create plane
+    bpy.ops.mesh.primitive_plane_add(size = 200)
 
-    # Sets object name
-    obj.name = data['name']
+    # Handle to floor
+    floor = bpy.context.view_layer.objects.active
 
+    # Set floor name
+    floor.name = data['name']
+
+    # Create material
+    if 'files' in data:
+        create_material(data['files'], floor, 'large', data['materialProps'])
+
+    # Defines the pivot and scale
+    pivot = Vector( (0.5, 0.5) )
+    scale = Vector( (3, 3) )
+
+    # Handle to UV map
+    uvMap = floor.data.uv_layers[0]
+
+    if floor is not None:
+        ScaleUV( uvMap, scale, pivot )
+
+"""Sets object material and transform properties"""
+def set_obj_props(data, obj):
     # Create Material
     if 'files' in data['materialData']:
         create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
@@ -181,7 +198,7 @@ def import_glb(data):
 
     # Set Rotation
     obj.rotation_euler[0] = data['rotation'][0]
-    obj.rotation_euler[1] = -data['rotation'][2]
+    obj.rotation_euler[1] = data['rotation'][2]
     obj.rotation_euler[2] = data['rotation'][1]
 
     # Set scale
@@ -190,30 +207,70 @@ def import_glb(data):
     obj.scale.z = data['scale'][1]
 
 
-"""Creates a plane which represents the floor"""
+"""Import glb object with properties from json"""
+def import_glb(data):
+    obj = load_glb(data['files']['gltf_original'])
+
+    # Sets object name
+    obj.name = data['name']
+
+    # Sets all properties for object
+    set_obj_props(data, obj)
+
+"""Create sphere object with properties from json"""
+def create_sphere(data):
+    # Create sphere
+    bpy.ops.mesh.primitive_uv_sphere_add(segments = 64, ring_count = 64, radius = 4.5)
+    bpy.ops.object.shade_smooth()
+
+    # Handle to sphere
+    sphere = bpy.context.view_layer.objects.active
+
+    # Sets all properties for object
+    set_obj_props(data, sphere)
+
+"""Create cube object with properties from json"""
+def create_cube(data):
+    # Create cube
+    bpy.ops.mesh.primitive_cube_add(size = 1)
+
+    # Handle to cube
+    cube = bpy.context.view_layer.objects.active
+
+    # Sets all properties for object
+    set_obj_props(data, cube)
+
+    # Set dimensions
+    cube.dimensions = [5, 6, 5]
+
+"""Create plane object with properties from json"""
 def create_plane(data):
     # Create plane
-    bpy.ops.mesh.primitive_plane_add(size = 200)
+    bpy.ops.mesh.primitive_cube_add(size = 1)
 
-    # Handle to floor
-    floor = bpy.context.view_layer.objects.active
+    # Handle to plane
+    plane = bpy.context.view_layer.objects.active
 
-    # Set floor name
-    floor.name = data['name']
+    # Sets all properties for object
+    set_obj_props(data, plane)
 
-    # Create material
-    create_material(data['files'], floor, 'large', data['materialProps'])
+    # Set dimensions
+    plane.dimensions = [3, 0.1, 4]
 
-    # Defines the pivot and scale
-    pivot = Vector( (0.5, 0.5) )
-    scale = Vector( (3, 3) )
+"""Create cylinder object with properties from json"""
+def create_cylinder(data):
+    # Create cylinder
+    bpy.ops.mesh.primitive_cylinder_add(radius = 4, depth = 12)
+    bpy.ops.object.shade_smooth()
 
-    # Handle to UV map
-    uvMap = floor.data.uv_layers[0]
+    # Handle to cylinder
+    cylinder = bpy.context.view_layer.objects.active
 
-    if floor is not None:
-        ScaleUV( uvMap, scale, pivot )
-    
+    # Sets all properties for object
+    set_obj_props(data, cylinder)
+
+
+
 
 """Creates Principled BSDF Material and assigns textures from json"""
 def create_material(files, obj, size, materialProps):
