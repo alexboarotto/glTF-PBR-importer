@@ -193,12 +193,12 @@ def set_obj_props(data, obj):
     obj.location.y = -data['position'][2]
     obj.location.z = data['position'][1]
 
-    # Sets rotation mode to XYZ
-    obj.rotation_mode = 'XYZ'
+    # Sets rotation mode to YZX
+    obj.rotation_mode = 'YZX'
 
     # Set Rotation
     obj.rotation_euler[0] = data['rotation'][0]
-    obj.rotation_euler[1] = data['rotation'][2]
+    obj.rotation_euler[1] = -data['rotation'][2]
     obj.rotation_euler[2] = data['rotation'][1]
 
     # Set scale
