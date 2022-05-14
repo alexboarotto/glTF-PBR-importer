@@ -1,8 +1,8 @@
-#############################################################################################################
+#########################################################################################################################################
 #
-# to run use the command: blender --background --python pbr_import.py [JSON Directory] [Output Directory]
+# to run use the command: blender --background --python pbr_import.py [JSON Directory] [Output Directory] [Max Samples] [Width] [Height]
 #
-#############################################################################################################
+#########################################################################################################################################
 
 
 import bpy, os
@@ -11,7 +11,7 @@ from urllib import request
 import math
 import sys
 import json
-
+import ssl
 
 def hex_to_rgb(value):
     lv = len(value)
@@ -380,8 +380,18 @@ def render(output_dir, output_filename = 'render.jpg'):
     bpy.context.scene.render.filepath = os.path.join(os.path.abspath(output_dir), output_filename)
     bpy.ops.render.render(write_still = True)
 
+def set_render_settings(max_samples = 4096, width = 1920, height = 1920):
+    scene = bpy.context.scene
+    scene.render.engine = 'CYCLES'
+    scene.cycles.device = 'GPU'
+    scene.cycles.samples = max_samples
+    scene.render.resolution_x = width
+    scene.render.resolution_y = height
+
 def main():
     args = sys.argv[1:]
+
+    ssl._create_default_https_context = ssl._create_unverified_context
 
     json = load_data(args[3])
 
@@ -414,15 +424,7 @@ def main():
         if i['type'] == "gltf":
             import_glb(i)
 
-    scene = bpy.context.scene
-    try:
-        scene.render.engine = 'CYCLES'
-        scene.cycles.device = 'GPU'
-        scene.render.resolution_x = 1920
-        scene.render.resolution_y = 1920
-        error = None
-    except Exception as err:
-        error = err.args[0]
+    set_render_settings(max_samples=int(args[5]), width=int(args[6]), height=int(args[7]))
     
     render(args[4])
 
