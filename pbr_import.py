@@ -12,6 +12,12 @@ import math
 import sys
 import json
 import ssl
+import hashlib
+
+CACHE_PATH = "cache"
+if not os.path.exists(CACHE_PATH):
+    os.mkdir(CACHE_PATH)
+
 
 def hex_to_rgb(value):
     lv = len(value)
@@ -28,22 +34,36 @@ def ScaleUV( uvMap, scale, pivot ):
 
 def load_image(url, isHDRI = False):
     img = None
+    is_in_cache = False
+
+    # Hash URL
+    encoded = url.encode()
+    result = hashlib.sha256(encoded)
+
+    # Make a temp filename that is valid
+    tmp_filename = "./" + CACHE_PATH + "/"+ result.hexdigest()
+    if isHDRI:
+        tmp_filename += ".pic"
+    else:
+        tmp_filename += ".png"
+
+    print(tmp_filename)
+
+    # Checks if image is in cache
+    if os.path.exists(os.path.abspath(tmp_filename)):
+        is_in_cache = True
+
     # Load image file from url.    
     try:
-        # Make a temp filename that is valid
-        tmp_filename = "./temp." + "pic" if isHDRI else "png"
-
-        # Fetch the image in this file
-        request.urlretrieve(url, os.path.abspath(tmp_filename))
+        # Fetch the image if not in cache
+        if not is_in_cache:
+            request.urlretrieve(url, os.path.abspath(tmp_filename))
 
         # Create a blender datablock of it
         img = bpy.data.images.load(os.path.abspath(tmp_filename))
 
         # Pack the image in the blender file
         img.pack()
-
-        # Delete the temp image from local directory
-        os.remove(os.path.abspath(tmp_filename))
 
     except Exception as e:
         raise NameError("Cannot load image: {0}".format(e))
@@ -52,12 +72,25 @@ def load_image(url, isHDRI = False):
 
 def load_glb(url):
     glb = None
-    try:
-        # Make a temp filename that is valid
-        tmp_filename = "./temp.glb"
+    is_in_cache = False
 
-        # Fetch the file
-        request.urlretrieve(url, os.path.abspath(tmp_filename))
+    # Hash URL
+    encoded = url.encode()
+    result = hashlib.sha256(encoded)
+
+    # Make a temp filename that is valid
+    tmp_filename = "./" + CACHE_PATH + "/"+ result.hexdigest() + ".glb"
+
+    print(tmp_filename)
+
+    # Checks if image is in cache
+    if os.path.exists(os.path.abspath(tmp_filename)):
+        is_in_cache = True
+
+    try:
+        # Fetch the file if not iin cache
+        if not is_in_cache:
+            request.urlretrieve(url, os.path.abspath(tmp_filename))
 
         # Import glb file
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
@@ -67,9 +100,6 @@ def load_glb(url):
 
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
-
-        # Remove local temp file
-        os.remove(os.path.abspath(tmp_filename))
 
     except Exception as e:
         raise NameError("Cannot load file: {0}".format(e))
@@ -428,7 +458,6 @@ def main():
     
     render(args[4])
 
-    
 
 if __name__ == "__main__":
     main()
