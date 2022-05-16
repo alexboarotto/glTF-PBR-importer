@@ -122,14 +122,13 @@ def create_light(data):
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
 
     # Set light intensity
-    light_data.energy = 100*data['object']['intensity']
+    light_data.energy = data['object']['intensity']*500
 
     # Set light radius
     light_data.shadow_soft_size = 1
 
     # Create color RGB list from hex value 
-    color = hex_to_rgb(str(data['object']['color']))
-    color.pop()
+    color = hex_to_rgb(hex(data['object']['color'])[2:8])
 
     # Set color
     light_data.color = color
@@ -194,6 +193,8 @@ def import_hdri(url):
 
     # Add Background node
     node_background = tree_nodes.new(type='ShaderNodeBackground')
+
+    node_background.inputs["Strength"].default_value = .3
 
     # Add Environment Texture node
     node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
@@ -316,8 +317,6 @@ def create_cylinder(data):
 
     # Sets all properties for object
     set_obj_props(data, cylinder)
-
-
 
 
 """Creates Principled BSDF Material and assigns textures from json"""

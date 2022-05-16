@@ -72,14 +72,14 @@ def create_light(data):
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
 
     # Set light intensity
-    light_data.energy = 100*data['object']['intensity']
+    light_data.energy = data['object']['intensity']*700
 
     # Set light radius
     light_data.shadow_soft_size = 1
 
     # Create color RGB list from hex value 
-    color = hex_to_rgb(str(data['object']['color']))
-    color.pop()
+    color = hex_to_rgb(hex(data['object']['color'])[2:8])
+
 
     # Set color
     light_data.color = color
