@@ -18,7 +18,6 @@ CACHE_PATH = "cache"
 if not os.path.exists(CACHE_PATH):
     os.mkdir(CACHE_PATH)
 
-
 def hex_to_rgb(value):
     lv = len(value)
     return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
@@ -31,6 +30,17 @@ def Scale2D( v, s, p ):
 def ScaleUV( uvMap, scale, pivot ):
     for uvIndex in range( len(uvMap.data) ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
+
+def scale_uv(obj, amount):
+    # Defines the pivot and scale
+    pivot = Vector( (0.5, 0.5) )
+    scale = Vector( (amount, amount) )
+
+    # Handle to UV map
+    uvMap = obj.data.uv_layers[0]
+
+    if obj is not None:
+        ScaleUV( uvMap, scale, pivot )
 
 def load_image(url, isHDRI = False):
     img = None
@@ -215,21 +225,16 @@ def create_floor(data):
     if 'files' in data:
         create_material(data['files'], floor, 'large', data['materialProps'])
 
-    # Defines the pivot and scale
-    pivot = Vector( (0.5, 0.5) )
-    scale = Vector( (3, 3) )
-
-    # Handle to UV map
-    uvMap = floor.data.uv_layers[0]
-
-    if floor is not None:
-        ScaleUV( uvMap, scale, pivot )
+    scale_uv(floor, 6)
+    
 
 """Sets object material and transform properties"""
 def set_obj_props(data, obj):
     # Create Material
     if 'files' in data['materialData']:
         create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
+
+    scale_uv(obj, 1.7)
 
     # Set location
     obj.location.x = data['position'][0]
@@ -417,6 +422,7 @@ def set_render_settings(max_samples = 4096, width = 1920, height = 1920):
     scene.cycles.samples = max_samples
     scene.render.resolution_x = width
     scene.render.resolution_y = height
+
 
 def main():
     args = sys.argv[1:]
