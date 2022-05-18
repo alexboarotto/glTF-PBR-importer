@@ -355,6 +355,8 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Metallic'].default_value = materialProps['metalness']
     if 'transmission' in materialProps:
         shader.inputs['Transmission'].default_value = materialProps['transmission']
+    if 'sheen' in materialProps:
+        shader.inputs['Sheen'].default_value = materialProps['sheen']
 
     # Initialize texture variables
     color = None
@@ -371,6 +373,8 @@ def create_material(files, obj, size, materialProps):
     if size+'_displacement' in files:
         displacement = nodes.new(type='ShaderNodeTexImage')
         displacement.image = load_image(files[size+'_displacement'])
+        if 'displacementScale' in materialProps:
+            displacement.inputs["Scale"].default_value = materialProps['displacementScale']
 
     # Handle to normal texture
     if size+'_normal' in files:
