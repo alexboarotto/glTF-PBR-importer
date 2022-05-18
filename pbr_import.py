@@ -235,7 +235,14 @@ def set_obj_props(data, obj):
     if 'files' in data['materialData']:
         create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
 
-    scale_uv(obj, 1.7)
+    texture_repeat = None
+    if 'textureRepeat' in data['materialData']['materialProps']:
+        texture_repeat = data['materialData']['materialProps']['textureRepeat']
+
+    if texture_repeat is not None:
+        scale_uv(obj, texture_repeat)
+    else:
+        scale_uv(obj, 1.7)
 
     # Set location
     obj.location.x = data['position'][0]
@@ -374,7 +381,7 @@ def create_material(files, obj, size, materialProps):
         displacement = nodes.new(type='ShaderNodeTexImage')
         displacement.image = load_image(files[size+'_displacement'])
         if 'displacementScale' in materialProps:
-            displacement.inputs["Scale"].default_value = materialProps['displacementScale']
+            displacement_map.inputs["Scale"].default_value = materialProps['displacementScale']
 
     # Handle to normal texture
     if size+'_normal' in files:
