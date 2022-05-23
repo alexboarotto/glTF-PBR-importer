@@ -20,7 +20,8 @@ if not os.path.exists(CACHE_PATH):
 
 def hex_to_rgb(value):
     lv = len(value)
-    return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+    rgb255 = list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+    return [x/255 for x in rgb255]
 
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
@@ -400,8 +401,6 @@ def create_material(files, obj, size, materialProps):
     rgb = hex_to_rgb(hex(materialProps['color'])[2:10])
     rgb.append(1.0)
     base_color.color_ramp.elements[1].color = rgb
-    base_color.color_ramp.interpolation = 'LINEAR'
-    base_color.color_ramp.hue_interpolation = 'FAR'
 
     #================================================================
     # Links

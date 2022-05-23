@@ -270,8 +270,6 @@ def create_cylinder(data):
     set_obj_props(data, cylinder)
 
 
-
-
 """Creates Principled BSDF Material and assigns textures from json"""
 def create_material(files, obj, size, materialProps):
     if len(obj.data.materials) >= 1:
