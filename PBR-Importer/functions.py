@@ -5,7 +5,8 @@ import math
 
 def hex_to_rgb(value):
     lv = len(value)
-    return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+    rgb255 = list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+    return [x/255 for x in rgb255]
 
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
@@ -79,7 +80,6 @@ def create_light(data):
 
     # Create color RGB list from hex value 
     color = hex_to_rgb(hex(data['object']['color'])[2:8])
-
 
     # Set color
     light_data.color = color
@@ -308,6 +308,8 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Metallic'].default_value = materialProps['metalness']
     if 'transmission' in materialProps:
         shader.inputs['Transmission'].default_value = materialProps['transmission']
+    if 'sheen' in materialProps:
+        shader.inputs['Sheen'].default_value = materialProps['sheen']
 
     # Initialize texture variables
     color = None
@@ -324,6 +326,8 @@ def create_material(files, obj, size, materialProps):
     if size+'_displacement' in files:
         displacement = nodes.new(type='ShaderNodeTexImage')
         displacement.image = load_image(files[size+'_displacement'])
+        if 'displacementScale' in materialProps:
+            displacement_map.inputs["Scale"].default_value = materialProps['displacementScale']
 
     # Handle to normal texture
     if size+'_normal' in files:
@@ -337,18 +341,37 @@ def create_material(files, obj, size, materialProps):
         roughness.image = load_image(files[size+'_roughness'])
         roughness.image.colorspace_settings.name = 'Non-Color'
 
+    # Handle to Color ramp node for Base Color
+    base_color = nodes.new(type='ShaderNodeValToRGB')
+    rgb = hex_to_rgb(hex(materialProps['color'])[2:8])
+    rgb.append(1.0)
+    base_color.color_ramp.elements[1].color = rgb
+
+    #================================================================
     # Links
+    #================================================================
+
+    # Color
     if color is not None:
-        links.new(color.outputs["Color"], shader.inputs["Base Color"])
+        links.new(color.outputs["Color"], base_color.inputs["Fac"])
+    links.new(base_color.outputs["Color"], shader.inputs["Base Color"])
+
+    # Normal
     if normal is not None:    
         links.new(normal.outputs["Color"], normal_map.inputs["Color"])
         links.new(normal_map.outputs["Normal"], shader.inputs["Normal"])
+
+    # Roughness
     if roughness is not None:
         links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
+
+    # Displacement
     if displacement is not None:
         links.new(displacement.outputs["Color"], displacement_map.inputs["Height"])
         links.new(displacement_map.outputs["Displacement"], output.inputs["Displacement"])
 
     links.new(shader.outputs["BSDF"], output.inputs["Surface"])
+
+    #==================================================================
 
     obj.data.materials.append(mat) #add the material to the object

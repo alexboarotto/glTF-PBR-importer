@@ -395,19 +395,40 @@ def create_material(files, obj, size, materialProps):
         roughness.image = load_image(files[size+'_roughness'])
         roughness.image.colorspace_settings.name = 'Non-Color'
 
+    # Handle to Color ramp node for Base Color
+    base_color = nodes.new(type='ShaderNodeValToRGB')
+    rgb = hex_to_rgb(hex(materialProps['color'])[2:10])
+    rgb.append(1.0)
+    base_color.color_ramp.elements[1].color = rgb
+    base_color.color_ramp.interpolation = 'LINEAR'
+    base_color.color_ramp.hue_interpolation = 'FAR'
+
+    #================================================================
     # Links
+    #================================================================
+
+    # Color
     if color is not None:
-        links.new(color.outputs["Color"], shader.inputs["Base Color"])
+        links.new(color.outputs["Color"], base_color.inputs["Fac"])
+    links.new(base_color.outputs["Color"], shader.inputs["Base Color"])
+
+    # Normal
     if normal is not None:    
         links.new(normal.outputs["Color"], normal_map.inputs["Color"])
         links.new(normal_map.outputs["Normal"], shader.inputs["Normal"])
+
+    # Roughness
     if roughness is not None:
         links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
+
+    # Displacement
     if displacement is not None:
         links.new(displacement.outputs["Color"], displacement_map.inputs["Height"])
         links.new(displacement_map.outputs["Displacement"], output.inputs["Displacement"])
 
     links.new(shader.outputs["BSDF"], output.inputs["Surface"])
+
+    #==================================================================
 
     obj.data.materials.append(mat) #add the material to the object
 
