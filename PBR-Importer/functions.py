@@ -326,6 +326,11 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Transmission'].default_value = materialProps['transmission']
     if 'sheen' in materialProps:
         shader.inputs['Sheen'].default_value = materialProps['sheen']
+    if 'emissive' in materialProps:
+        if not type(materialProps['emissive']) == str and not materialProps['emissive'] == 0:
+            rgb = hex_to_rgb(hex(materialProps['emissive'])[2:8])
+            rgb.append(1.0)
+            shader.inputs['Emission'].default_value = rgb
 
     # Initialize texture variables
     color = None
