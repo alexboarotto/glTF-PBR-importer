@@ -17,6 +17,17 @@ def ScaleUV( uvMap, scale, pivot ):
     for uvIndex in range( len(uvMap.data) ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
+def scale_uv(obj, amount):
+    # Defines the pivot and scale
+    pivot = Vector( (0.5, 0.5) )
+    scale = Vector( (amount, amount) )
+
+    # Handle to UV map
+    uvMap = obj.data.uv_layers[0]
+
+    if obj is not None:
+        ScaleUV( uvMap, scale, pivot )
+
 def load_image(url, isHDRI = False):
     img = None
     # Load image file from url.    
@@ -73,7 +84,7 @@ def create_light(data):
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
 
     # Set light intensity
-    light_data.energy = data['object']['intensity']*700
+    light_data.energy = data['object']['intensity']*100000
 
     # Set light radius
     light_data.shadow_soft_size = 1
@@ -106,6 +117,9 @@ def create_camera(data):
 
     # Handle to camera
     camera = bpy.data.objects[name]
+
+    # Sets active camera
+    bpy.context.scene.camera = camera
 
     # Set location
     camera.location.x = data['position']['x']
@@ -142,6 +156,8 @@ def import_hdri(url):
     # Add Background node
     node_background = tree_nodes.new(type='ShaderNodeBackground')
 
+    node_background.inputs["Strength"].default_value = .3
+
     # Add Environment Texture node
     node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
 
@@ -172,21 +188,23 @@ def create_floor(data):
     if 'files' in data:
         create_material(data['files'], floor, 'large', data['materialProps'])
 
-    # Defines the pivot and scale
-    pivot = Vector( (0.5, 0.5) )
-    scale = Vector( (3, 3) )
-
-    # Handle to UV map
-    uvMap = floor.data.uv_layers[0]
-
-    if floor is not None:
-        ScaleUV( uvMap, scale, pivot )
+    scale_uv(floor, 6)
+    
 
 """Sets object material and transform properties"""
 def set_obj_props(data, obj):
     # Create Material
     if 'files' in data['materialData']:
         create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
+
+    texture_repeat = None
+    if 'textureRepeat' in data['materialData']['materialProps']:
+        texture_repeat = data['materialData']['materialProps']['textureRepeat']
+
+    if texture_repeat is not None:
+        scale_uv(obj, texture_repeat)
+    else:
+        scale_uv(obj, 1.7)
 
     # Set location
     obj.location.x = data['position'][0]
@@ -340,10 +358,11 @@ def create_material(files, obj, size, materialProps):
         roughness.image.colorspace_settings.name = 'Non-Color'
 
     # Handle to Color ramp node for Base Color
-    base_color = nodes.new(type='ShaderNodeValToRGB')
-    rgb = hex_to_rgb(hex(materialProps['color'])[2:8])
+    mix_rgb = nodes.new(type='ShaderNodeMixRGB')
+    mix_rgb.blend_type = 'MULTIPLY'
+    rgb = hex_to_rgb(hex(materialProps['color'])[2:10])
     rgb.append(1.0)
-    base_color.color_ramp.elements[1].color = rgb
+    mix_rgb.inputs[2].default_value = rgb
 
     #================================================================
     # Links
@@ -351,8 +370,8 @@ def create_material(files, obj, size, materialProps):
 
     # Color
     if color is not None:
-        links.new(color.outputs["Color"], base_color.inputs["Fac"])
-    links.new(base_color.outputs["Color"], shader.inputs["Base Color"])
+        links.new(color.outputs["Color"], mix_rgb.inputs[1])
+    links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
 
     # Normal
     if normal is not None:    

@@ -123,7 +123,7 @@ def create_light(data):
     light_data = bpy.data.lights.new(name="light-data", type='POINT')
 
     # Set light intensity
-    light_data.energy = data['object']['intensity']*500
+    light_data.energy = data['object']['intensity']*100000
 
     # Set light radius
     light_data.shadow_soft_size = 1
@@ -195,7 +195,7 @@ def import_hdri(url):
     # Add Background node
     node_background = tree_nodes.new(type='ShaderNodeBackground')
 
-    node_background.inputs["Strength"].default_value = .3
+    node_background.inputs["Strength"].default_value = .4
 
     # Add Environment Texture node
     node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
@@ -397,10 +397,11 @@ def create_material(files, obj, size, materialProps):
         roughness.image.colorspace_settings.name = 'Non-Color'
 
     # Handle to Color ramp node for Base Color
-    base_color = nodes.new(type='ShaderNodeValToRGB')
+    mix_rgb = nodes.new(type='ShaderNodeMixRGB')
+    mix_rgb.blend_type = 'MULTIPLY'
     rgb = hex_to_rgb(hex(materialProps['color'])[2:10])
     rgb.append(1.0)
-    base_color.color_ramp.elements[1].color = rgb
+    mix_rgb.inputs[2].default_value = rgb
 
     #================================================================
     # Links
@@ -408,8 +409,8 @@ def create_material(files, obj, size, materialProps):
 
     # Color
     if color is not None:
-        links.new(color.outputs["Color"], base_color.inputs["Fac"])
-    links.new(base_color.outputs["Color"], shader.inputs["Base Color"])
+        links.new(color.outputs["Color"], mix_rgb.inputs[1])
+    links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
 
     # Normal
     if normal is not None:    
