@@ -346,12 +346,6 @@ def create_material(files, obj, size, materialProps):
     # Handle to shader node
     shader = nodes.new(type='ShaderNodeBsdfPrincipled')
 
-    # Handle to normal map node
-    normal_map = nodes.new(type='ShaderNodeNormalMap')
-
-    # Handle to displacement node
-    displacement_map = nodes.new(type='ShaderNodeDisplacement')
-
     # Assign material props
     if 'clearcoat' in materialProps:
         shader.inputs['Clearcoat'].default_value = materialProps['clearcoat']
@@ -365,6 +359,18 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Transmission'].default_value = materialProps['transmission']
     if 'sheen' in materialProps:
         shader.inputs['Sheen'].default_value = materialProps['sheen']
+    if 'emissive' in materialProps:
+        if not type(materialProps['emissive']) == str and not materialProps['emissive'] == 0:
+            print(materialProps['emissive'])
+            rgb = hex_to_rgb(hex(materialProps['emissive'])[2:8])
+            rgb.append(1.0)
+            shader.inputs['Emission'].default_value = rgb
+
+    # Handle to normal map node
+    normal_map = nodes.new(type='ShaderNodeNormalMap')
+
+    # Handle to displacement node
+    displacement_map = nodes.new(type='ShaderNodeDisplacement')
 
     # Initialize texture variables
     color = None
@@ -396,10 +402,10 @@ def create_material(files, obj, size, materialProps):
         roughness.image = load_image(files[size+'_roughness'])
         roughness.image.colorspace_settings.name = 'Non-Color'
 
-    # Handle to Color ramp node for Base Color
+    # Handle to MixRGB node for Base Color
     mix_rgb = nodes.new(type='ShaderNodeMixRGB')
     mix_rgb.blend_type = 'MULTIPLY'
-    rgb = hex_to_rgb(hex(materialProps['color'])[2:10])
+    rgb = hex_to_rgb(hex(materialProps['color'])[2:8])
     rgb.append(1.0)
     mix_rgb.inputs[2].default_value = rgb
 
