@@ -4,6 +4,8 @@ from urllib import request
 import math
 
 def hex_to_rgb(value):
+    if value == '0':
+        return None
     lv = len(value)
     rgb255 = list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
     return [x/255 for x in rgb255]
@@ -182,7 +184,8 @@ def create_floor(data):
     floor = bpy.context.view_layer.objects.active
 
     # Set floor name
-    floor.name = data['name']
+    if 'name' in data:
+        floor.name = data['name']
 
     # Create material
     if 'files' in data:
@@ -196,6 +199,8 @@ def set_obj_props(data, obj):
     # Create Material
     if 'files' in data['materialData']:
         create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
+    else:
+        create_material(None, obj, 'medium', data['materialData']['materialProps'])
 
     texture_repeat = None
     if 'textureRepeat' in data['materialData']['materialProps']:
@@ -294,6 +299,7 @@ def create_material(files, obj, size, materialProps):
         obj.data.materials.pop(index = 0)
     mat = bpy.data.materials.new(name=obj.name) #set new material to variable
     mat.use_nodes = True
+    rgb = None
 
     # Clear nodes
     if mat.node_tree:
@@ -327,8 +333,9 @@ def create_material(files, obj, size, materialProps):
     if 'sheen' in materialProps:
         shader.inputs['Sheen'].default_value = materialProps['sheen']
     if 'emissive' in materialProps:
-        if not type(materialProps['emissive']) == str and not materialProps['emissive'] == 0:
+        if not type(materialProps['emissive']) == str:
             rgb = hex_to_rgb(hex(materialProps['emissive'])[2:8])
+        if rgb is not None:
             rgb.append(1.0)
             shader.inputs['Emission'].default_value = rgb
 
@@ -339,35 +346,38 @@ def create_material(files, obj, size, materialProps):
     roughness = None
 
     # Handle to color texture
-    if size+'_color' in files:
-        color = nodes.new(type='ShaderNodeTexImage')
+    color = nodes.new(type='ShaderNodeTexImage')
+    if files is not None and size+'_color' in files:
         color.image = load_image(files[size+'_color'])
 
     # Handle to displacement texture
-    if size+'_displacement' in files:
-        displacement = nodes.new(type='ShaderNodeTexImage')
+    displacement = nodes.new(type='ShaderNodeTexImage')
+    if files is not None and size+'_displacement' in files:
         displacement.image = load_image(files[size+'_displacement'])
         if 'displacementScale' in materialProps:
             displacement_map.inputs["Scale"].default_value = materialProps['displacementScale']
 
     # Handle to normal texture
-    if size+'_normal' in files:
-        normal = nodes.new(type='ShaderNodeTexImage')
+    normal = nodes.new(type='ShaderNodeTexImage')
+    if files is not None and size+'_normal' in files:
         normal.image = load_image(files[size+'_normal'])
         normal.image.colorspace_settings.name = 'Non-Color'
 
     # Handle to roughness texture
-    if size+'_roughness' in files:
-        roughness = nodes.new(type='ShaderNodeTexImage')
+    roughness = nodes.new(type='ShaderNodeTexImage')
+    if files is not None and size+'_roughness' in files:
         roughness.image = load_image(files[size+'_roughness'])
         roughness.image.colorspace_settings.name = 'Non-Color'
 
     # Handle to Color ramp node for Base Color
     mix_rgb = nodes.new(type='ShaderNodeMixRGB')
-    mix_rgb.blend_type = 'MULTIPLY'
-    rgb = hex_to_rgb(hex(materialProps['color'])[2:10])
-    rgb.append(1.0)
-    mix_rgb.inputs[2].default_value = rgb
+    mix_rgb.blend_type = 'COLOR'
+    if 'color' in materialProps and not type(materialProps['color']) == str:
+        rgb = hex_to_rgb(hex(materialProps['color'])[2:8])
+    if rgb is not None:
+        rgb.append(1.0)
+        mix_rgb.inputs[2].default_value = rgb[:4]
+        mix_rgb.inputs[0].default_value = 1
 
     #================================================================
     # Links
