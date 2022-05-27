@@ -425,7 +425,9 @@ def create_material(files, obj, size, materialProps):
     # Color
     if color is not None and color.image is not None:
         links.new(color.outputs["Color"], mix_rgb.inputs[1])
-    links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
+        links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
+    elif rgb is not None:
+        shader.inputs["Base Color"].default_value = rgb[:4]
 
     # Normal
     if normal is not None and normal.image is not None:    

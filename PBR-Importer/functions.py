@@ -384,21 +384,23 @@ def create_material(files, obj, size, materialProps):
     #================================================================
 
     # Color
-    if color is not None:
+    if color is not None and color.image is not None:
         links.new(color.outputs["Color"], mix_rgb.inputs[1])
-    links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
+        links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
+    elif rgb is not None:
+        shader.inputs["Base Color"].default_value = rgb[:4]
 
     # Normal
-    if normal is not None:    
+    if normal is not None and normal.image is not None:    
         links.new(normal.outputs["Color"], normal_map.inputs["Color"])
         links.new(normal_map.outputs["Normal"], shader.inputs["Normal"])
 
     # Roughness
-    if roughness is not None:
+    if roughness is not None and roughness.image is not None:
         links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
 
     # Displacement
-    if displacement is not None:
+    if displacement is not None and displacement.image is not None:
         links.new(displacement.outputs["Color"], displacement_map.inputs["Height"])
         links.new(displacement_map.outputs["Displacement"], output.inputs["Displacement"])
 
