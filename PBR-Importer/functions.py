@@ -5,7 +5,7 @@ import math
 
 def hex_to_rgb(value):
     if value == '0':
-        return None
+        return [0,0,0]
     lv = len(value)
     rgb255 = list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
     return [x/255 for x in rgb255]
@@ -371,7 +371,7 @@ def create_material(files, obj, size, materialProps):
 
     # Handle to Color ramp node for Base Color
     mix_rgb = nodes.new(type='ShaderNodeMixRGB')
-    mix_rgb.blend_type = 'COLOR'
+    mix_rgb.blend_type = 'MULTIPLY'
     if 'color' in materialProps and not type(materialProps['color']) == str:
         rgb = hex_to_rgb(hex(materialProps['color'])[2:8])
     if rgb is not None:
