@@ -89,7 +89,7 @@ def create_light(data):
     light_data.energy = data['object']['intensity']*100000
 
     # Set light radius
-    light_data.shadow_soft_size = 1
+    light_data.shadow_soft_size = 7
 
     # Create color RGB list from hex value 
     color = hex_to_rgb(hex(data['object']['color'])[2:8])
