@@ -18,12 +18,11 @@ CACHE_PATH = "cache"
 if not os.path.exists(CACHE_PATH):
     os.mkdir(CACHE_PATH)
 
-def hex_to_rgb(value):
-    if value == '0':
-        return [0,0,0]
-    lv = len(value)
-    rgb255 = list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-    return [x/255 for x in rgb255]
+def hex_to_rgb( hex_value ):
+    b = (hex_value & 0xFF) / 255.0
+    g = ((hex_value >> 8) & 0xFF) / 255.0
+    r = ((hex_value >> 16) & 0xFF) / 255.0
+    return r, g, b
 
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
@@ -131,7 +130,7 @@ def create_light(data):
     light_data.shadow_soft_size = 7
 
     # Create color RGB list from hex value 
-    color = hex_to_rgb(hex(data['object']['color'])[2:8])
+    color = [*hex_to_rgb(data['object']['color'])]
 
     # Set color
     light_data.color = color
@@ -358,6 +357,10 @@ def create_material(files, obj, size, materialProps):
     # Handle to displacement node
     displacement_map = nodes.new(type='ShaderNodeDisplacement')
 
+    # Handle to Gamma node
+    gamma = nodes.new(type='ShaderNodeGamma')
+    gamma.inputs["Gamma"].default_value = 2.2
+
     # Assign material props
     if 'clearcoat' in materialProps:
         shader.inputs['Clearcoat'].default_value = materialProps['clearcoat']
@@ -373,10 +376,7 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Sheen'].default_value = materialProps['sheen']
     if 'emissive' in materialProps:
         if not type(materialProps['emissive']) == str:
-            rgb = hex_to_rgb(hex(materialProps['emissive'])[2:8])
-        if rgb is not None:
-            rgb.append(1.0)
-            shader.inputs['Emission'].default_value = rgb
+            shader.inputs['Emission'].default_value = (*hex_to_rgb(materialProps['emissive']), 1) 
 
     # Initialize texture variables
     color = None
@@ -412,10 +412,8 @@ def create_material(files, obj, size, materialProps):
     mix_rgb = nodes.new(type='ShaderNodeMixRGB')
     mix_rgb.blend_type = 'MULTIPLY'
     if 'color' in materialProps and not type(materialProps['color']) == str:
-        rgb = hex_to_rgb(hex(materialProps['color'])[2:8])
-    if rgb is not None:
-        rgb.append(1.0)
-        mix_rgb.inputs[2].default_value = rgb[:4]
+        rgb = (*hex_to_rgb(materialProps['color']), 1)
+        gamma.inputs["Color"].default_value = rgb
         mix_rgb.inputs[0].default_value = 1
 
     #================================================================
@@ -425,9 +423,10 @@ def create_material(files, obj, size, materialProps):
     # Color
     if color is not None and color.image is not None:
         links.new(color.outputs["Color"], mix_rgb.inputs[1])
-        links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"])
+        links.new(gamma.outputs["Color"], mix_rgb.inputs[2])
+        links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"] )
     elif rgb is not None:
-        shader.inputs["Base Color"].default_value = rgb[:4]
+        links.new(gamma.outputs["Color"], shader.inputs["Base Color"])
 
     # Normal
     if normal is not None and normal.image is not None:    
