@@ -397,6 +397,8 @@ def create_material(files, obj, size, materialProps):
     # Roughness
     if roughness is not None and roughness.image is not None:
         links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
+    elif 'roughness' in materialProps:
+        shader.inputs['Roughness'].default_value = materialProps['Roughness']
 
     # Displacement
     if displacement is not None and displacement.image is not None:
