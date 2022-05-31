@@ -196,7 +196,7 @@ def import_hdri(url):
     # Add Background node
     node_background = tree_nodes.new(type='ShaderNodeBackground')
 
-    node_background.inputs["Strength"].default_value = .3
+    node_background.inputs["Strength"].default_value = 1
 
     # Add Environment Texture node
     node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
@@ -437,7 +437,7 @@ def create_material(files, obj, size, materialProps):
     if roughness is not None and roughness.image is not None:
         links.new(roughness.outputs["Color"], shader.inputs["Roughness"])
     elif 'roughness' in materialProps:
-        shader.inputs['Roughness'].default_value = materialProps['Roughness']
+        shader.inputs['Roughness'].default_value = materialProps['roughness']
 
     # Displacement
     if displacement is not None and displacement.image is not None:
