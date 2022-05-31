@@ -3,11 +3,21 @@ from mathutils import Matrix, Vector
 from urllib import request 
 import math
 
-def hex_to_rgb( hex_value ):
-    b = (hex_value & 0xFF) / 255.0
-    g = ((hex_value >> 8) & 0xFF) / 255.0
-    r = ((hex_value >> 16) & 0xFF) / 255.0
-    return r, g, b
+def rgb_int2tuple(rgbint):
+  return ( rgbint // 256 // 256 % 256, rgbint // 256 % 256, rgbint % 256)
+
+def srgb_to_linear(x: float) -> float:
+	if x <= 0.0:
+		return 0.0
+	elif x >= 1:
+		return 1.0
+	elif x < 0.04045:
+		return x / 12.92
+	else:
+		return ((x + 0.055) / 1.055) ** 2.4
+
+def linear_from_int(rgbint):
+  return list(map (lambda y: srgb_to_linear(y/255), rgb_int2tuple(rgbint)))
 
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
@@ -91,7 +101,7 @@ def create_light(data):
     light_data.shadow_soft_size = 7
 
     # Create color RGB list from hex value 
-    color = [*hex_to_rgb(data['object']['color'])]
+    color = linear_from_int(data['object']['color'])
 
     # Set color
     light_data.color = color
@@ -318,9 +328,6 @@ def create_material(files, obj, size, materialProps):
     # Handle to displacement node
     displacement_map = nodes.new(type='ShaderNodeDisplacement')
 
-    # Handle to Gamma node
-    gamma = nodes.new(type='ShaderNodeGamma')
-    gamma.inputs["Gamma"].default_value = 2.2
 
     # Assign material props
     if 'clearcoat' in materialProps:
@@ -337,7 +344,7 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Sheen'].default_value = materialProps['sheen']
     if 'emissive' in materialProps:
         if not type(materialProps['emissive']) == str:
-            shader.inputs['Emission'].default_value = (*hex_to_rgb(materialProps['emissive']), 1) 
+            shader.inputs['Emission'].default_value = (*linear_from_int(materialProps['emissive']), 1)
 
     # Initialize texture variables
     color = None
@@ -369,12 +376,12 @@ def create_material(files, obj, size, materialProps):
         roughness.image = load_image(files[size+'_roughness'])
         roughness.image.colorspace_settings.name = 'Non-Color'
 
-    # Handle to Color ramp node for Base Color
+    # Handle to MixRGB Node
     mix_rgb = nodes.new(type='ShaderNodeMixRGB')
     mix_rgb.blend_type = 'MULTIPLY'
     if 'color' in materialProps and not type(materialProps['color']) == str:
-        rgb = (*hex_to_rgb(materialProps['color']), 1)
-        gamma.inputs["Color"].default_value = rgb
+        rgb = (*linear_from_int(materialProps['color']), 1)
+        mix_rgb.inputs[2].default_value = rgb
         mix_rgb.inputs[0].default_value = 1
 
     #================================================================
@@ -384,10 +391,9 @@ def create_material(files, obj, size, materialProps):
     # Color
     if color is not None and color.image is not None:
         links.new(color.outputs["Color"], mix_rgb.inputs[1])
-        links.new(gamma.outputs["Color"], mix_rgb.inputs[2])
         links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"] )
     elif rgb is not None:
-        links.new(gamma.outputs["Color"], shader.inputs["Base Color"])
+        shader.inputs["Base Color"].default_value = (*linear_from_int(materialProps['color']), 1)
 
     # Normal
     if normal is not None and normal.image is not None:    
