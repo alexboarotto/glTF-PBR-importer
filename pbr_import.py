@@ -297,6 +297,9 @@ def create_sphere(data):
     # Handle to sphere
     sphere = bpy.context.view_layer.objects.active
 
+    # Add solifify modifier
+    bpy.ops.object.modifier_add(type='SOLIDIFY')
+
     # Sets all properties for object
     set_obj_props(data, sphere)
 
@@ -307,6 +310,9 @@ def create_cube(data):
 
     # Handle to cube
     cube = bpy.context.view_layer.objects.active
+
+    # Add solifify modifier
+    bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Sets all properties for object
     set_obj_props(data, cube)
@@ -322,6 +328,9 @@ def create_plane(data):
     # Handle to plane
     plane = bpy.context.view_layer.objects.active
 
+    # Add solifify modifier
+    bpy.ops.object.modifier_add(type='SOLIDIFY')
+
     # Sets all properties for object
     set_obj_props(data, plane)
 
@@ -336,6 +345,9 @@ def create_cylinder(data):
 
     # Handle to cylinder
     cylinder = bpy.context.view_layer.objects.active
+
+    # Add solifify modifier
+    bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Sets all properties for object
     set_obj_props(data, cylinder)
