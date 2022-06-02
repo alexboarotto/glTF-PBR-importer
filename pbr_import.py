@@ -44,6 +44,8 @@ def ScaleUV( uvMap, scale, pivot ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
 def scale_uv(obj, amount):
+    if obj.data is None:
+        return
     # Defines the pivot and scale
     pivot = Vector( (0.5, 0.5) )
     scale = Vector( (amount, amount) )
@@ -355,6 +357,8 @@ def create_cylinder(data):
 
 """Creates Principled BSDF Material and assigns textures from json"""
 def create_material(files, obj, size, materialProps):
+    if obj.data is None:
+        return
     if len(obj.data.materials) >= 1:
         obj.data.materials.pop(index = 0)
     mat = bpy.data.materials.new(name=obj.name) #set new material to variable
