@@ -18,6 +18,9 @@ CACHE_PATH = "cache"
 if not os.path.exists(CACHE_PATH):
     os.mkdir(CACHE_PATH)
 
+#=================================================================================
+#COLOR CONVERSIONS
+#=================================================================================
 def rgb_int2tuple(rgbint):
   return ( rgbint // 256 // 256 % 256, rgbint // 256 % 256, rgbint % 256)
 
@@ -33,6 +36,50 @@ def srgb_to_linear(x: float) -> float:
 
 def linear_from_int(rgbint):
   return list(map (lambda y: srgb_to_linear(y/255), rgb_int2tuple(rgbint)))
+
+
+def rgb_to_hsv(r, g, b):
+    r = float(r)
+    g = float(g)
+    b = float(b)
+    high = max(r, g, b)
+    low = min(r, g, b)
+    h, s, v = high, high, high
+
+    d = high - low
+    s = 0 if high == 0 else d/high
+
+    if high == low:
+        h = 0.0
+    else:
+        h = {
+            r: (g - b) / d + (6 if g < b else 0),
+            g: (b - r) / d + 2,
+            b: (r - g) / d + 4,
+        }[high]
+        h /= 6
+
+    return h, s, v
+
+def hsv_to_rgb(h, s, v):
+    i = math.floor(h*6)
+    f = h*6 - i
+    p = v * (1-s)
+    q = v * (1-f*s)
+    t = v * (1-(1-f)*s)
+
+    r, g, b = [
+        (v, t, p),
+        (q, v, p),
+        (p, v, t),
+        (p, q, v),
+        (t, p, v),
+        (v, p, q),
+    ][int(i%6)]
+
+    return r, g, b
+#=================================================================================
+#=================================================================================
 
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
@@ -448,7 +495,16 @@ def create_material(files, obj, size, materialProps):
         links.new(color.outputs["Color"], mix_rgb.inputs[1])
         links.new(mix_rgb.outputs["Color"], shader.inputs["Base Color"] )
     elif rgb is not None:
-        shader.inputs["Base Color"].default_value = (*linear_from_int(materialProps['color']), 1)
+        transmission = shader.inputs['Transmission'].default_value
+        h,s,v = rgb_to_hsv(*linear_from_int(materialProps['color']))
+        v_range = float(1.0-v)
+        v = v + (transmission*v_range)
+        s_threshold = 0.25
+        if s >= s_threshold:
+            s_range = s-s_threshold
+            s = s - (transmission*s_range)
+        rgb = (*hsv_to_rgb(h,s,v), 1)
+        shader.inputs["Base Color"].default_value = rgb
 
     # Normal
     if normal is not None and normal.image is not None:    
