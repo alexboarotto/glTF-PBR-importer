@@ -80,6 +80,10 @@ def ScaleUV( uvMap, scale, pivot ):
 def scale_uv(obj, amount):
     if obj.data is None:
         return
+
+    if len(obj.data.uv_layers) <= 0:
+        return
+        
     # Defines the pivot and scale
     pivot = Vector( (0.5, 0.5) )
     scale = Vector( (amount, amount) )
@@ -317,11 +321,20 @@ def create_sphere(data):
 
 """Create cube object with properties from json"""
 def create_cube(data):
-    # Create cube
-    bpy.ops.mesh.primitive_cube_add(size = 1)
+    vertices = [(-2.5, -3, -2.5), (2.5, -3, -2.5), (-2.5, -3, 2.5), (2.5, -3, 2.5), (-2.5, 3, -2.5), (2.5, 3, -2.5), (-2.5, 3, 2.5), (2.5, 3, 2.5)]
+    edges = []
+    faces = [(0,1,3,2),(0,2,6,4),(4,6,7,5),(1,3,7,5),(3,2,6,7),(0,1,5,4)]
 
-    # Handle to cube
-    cube = bpy.context.view_layer.objects.active
+    mesh = bpy.data.meshes.new(data["name"])
+    mesh.from_pydata(vertices,edges,faces)
+    mesh.update()
+
+    mesh.uv_layers.new(name=data["name"])
+
+    cube = bpy.data.objects.new(data["name"], mesh)
+
+    view_layer = bpy.context.view_layer
+    view_layer.active_layer_collection.collection.objects.link(cube)
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
@@ -329,25 +342,28 @@ def create_cube(data):
     # Sets all properties for object
     set_obj_props(data, cube)
 
-    # Set dimensions
-    cube.dimensions = [5, 6, 5]
-
 """Create plane object with properties from json"""
 def create_plane(data):
-    # Create plane
-    bpy.ops.mesh.primitive_cube_add(size = 1)
+    vertices = [(-1.5, -.05, -2), (1.5, -.05, -2), (-1.5, -.05, 2), (1.5, -.05, 2), (-1.5, .05, -2), (1.5, .05, -2), (-1.5, .05, 2), (1.5, .05, 2)]
+    edges = []
+    faces = [(0,1,3,2),(0,2,6,4),(4,6,7,5),(1,3,7,5),(3,2,6,7),(0,1,5,4)]
 
-    # Handle to plane
-    plane = bpy.context.view_layer.objects.active
+    mesh = bpy.data.meshes.new(data["name"])
+    mesh.from_pydata(vertices,edges,faces)
+    mesh.update()
+
+    mesh.uv_layers.new(name=data["name"])
+
+    plane = bpy.data.objects.new(data["name"], mesh)
+
+    view_layer = bpy.context.view_layer
+    view_layer.active_layer_collection.collection.objects.link(plane)
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Sets all properties for object
     set_obj_props(data, plane)
-
-    # Set dimensions
-    plane.dimensions = [3, 0.1, 4]
 
 """Create cylinder object with properties from json"""
 def create_cylinder(data):
