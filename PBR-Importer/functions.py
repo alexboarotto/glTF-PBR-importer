@@ -1,3 +1,6 @@
+from xmlrpc.client import FastMarshaller
+
+from numpy import fliplr
 import bpy, os
 from mathutils import Matrix, Vector
 from urllib import request 
@@ -93,6 +96,12 @@ def scale_uv(obj, amount):
 
     if obj is not None:
         ScaleUV( uvMap, scale, pivot )
+
+# Flip our y axis on all our UVs
+def flip_uvs_y(obj):
+    for layer in obj.data.uv_layers:
+       for loop in layer.data.values():
+           loop.uv[1] *= -1
 
 def load_image(url, isHDRI = False):
     img = None
@@ -266,10 +275,13 @@ def set_obj_props(data, obj):
     else:
         create_material(None, obj, 'medium', data['materialData']['materialProps'])
 
+
+    # Handle to Texture Repeat value
     texture_repeat = None
     if 'textureRepeat' in data['materialData']['materialProps']:
         texture_repeat = data['materialData']['materialProps']['textureRepeat']
 
+    # Apply scaling to UVs
     if texture_repeat is not None:
         scale_uv(obj, texture_repeat)
     else:
@@ -300,6 +312,9 @@ def import_glb(data):
 
     # Sets object name
     obj.name = data['name']
+
+    # Flip UVs on y axis
+    flip_uvs_y(obj)
 
     # Sets all properties for object
     set_obj_props(data, obj)
@@ -339,6 +354,9 @@ def create_cube(data):
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
+    # Flip UVs on y axis
+    flip_uvs_y(cube)
+
     # Sets all properties for object
     set_obj_props(data, cube)
 
@@ -361,6 +379,9 @@ def create_plane(data):
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
+
+    # Flip UVs on y axis
+    flip_uvs_y(plane)
 
     # Sets all properties for object
     set_obj_props(data, plane)
