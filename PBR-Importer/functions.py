@@ -88,7 +88,7 @@ def scale_uv(obj, amount):
         return
         
     # Defines the pivot and scale
-    pivot = Vector( (0.5, 0.5) )
+    pivot = Vector( (0, 0) )
     scale = Vector( (amount, amount) )
 
     # Handle to UV map
