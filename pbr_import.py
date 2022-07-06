@@ -105,9 +105,27 @@ def scale_uv(obj, amount):
 
 # Flip our y axis on all our UVs
 def flip_uvs_y(obj):
+    min_uv_y = None
+    max_uv_y = None
     for layer in obj.data.uv_layers:
-       for loop in layer.data.values():
-           loop.uv[1] *= -1
+        for loop in layer.data.values():
+            if not min_uv_y:
+                min_uv_y = loop.uv[1]
+            elif loop.uv[1] < min_uv_y:
+                min_uv_y = loop.uv[1]
+
+            if not max_uv_y:
+                max_uv_y = loop.uv[1]
+            elif loop.uv[1] > max_uv_y:
+                max_uv_y = loop.uv[1]
+
+            loop.uv[1] *= -1
+        
+    height = max_uv_y - min_uv_y
+
+    for loop in layer.data.values():
+            loop.uv[1] += height + min_uv_y
+
 
 def load_image(url, isHDRI = False):
     img = None
