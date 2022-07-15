@@ -94,7 +94,7 @@ def scale_uv(obj, amount):
     if obj.data is None:
         return
     # Defines the pivot and scale
-    pivot = Vector( (0.5, 0.5) )
+    pivot = Vector( (0, 0) )
     scale = Vector( (amount, amount) )
 
     # Handle to UV map
@@ -124,7 +124,7 @@ def flip_uvs_y(obj):
     height = max_uv_y - min_uv_y
 
     for loop in layer.data.values():
-            loop.uv[1] += height + min_uv_y
+        loop.uv[1] += height + min_uv_y
 
 
 def load_image(url, isHDRI = False):
