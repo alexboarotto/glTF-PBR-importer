@@ -5,6 +5,7 @@
 #########################################################################################################################################
 
 
+from dataclasses import replace
 import bpy, os
 from mathutils import Matrix, Vector
 from urllib import request 
@@ -91,7 +92,7 @@ def ScaleUV( uvMap, scale, pivot ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
 def scale_uv(obj, amount):
-    if obj.data is None:
+    if not obj.data:
         return
     # Defines the pivot and scale
     pivot = Vector( (0, 0) )
@@ -105,6 +106,8 @@ def scale_uv(obj, amount):
 
 # Flip our y axis on all our UVs
 def flip_uvs_y(obj):
+    if not obj.data:
+        return
     min_uv_y = None
     max_uv_y = None
     for layer in obj.data.uv_layers:
@@ -198,6 +201,26 @@ def load_glb(url):
 
     except Exception as e:
         raise NameError("Cannot load file: {0}".format(e))
+
+    return glb
+
+def create_glb(shape):
+    glb = None
+    # Make a temp filename that is valid
+    tmp_filename = "./" + CACHE_PATH + "/"+ shape + ".glb"
+
+    path = os.path.abspath(tmp_filename)
+
+    # Import glb file
+    bpy.ops.import_scene.gltf(filepath=path)
+
+    # Set object origin
+    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
+
+    # Handle to active object
+    glb = bpy.context.view_layer.objects.active
+
+    flip_uvs_y(glb)
 
     return glb
 
@@ -312,7 +335,16 @@ def create_floor(data):
     if 'files' in data:
         create_material(data['files'], floor, 'large', data['materialProps'])
 
-    scale_uv(floor, 6)
+    # Handle to Texture Repeat value
+    texture_repeat = None
+    if 'textureRepeat' in data['materialData']['materialProps']:
+        texture_repeat = data['materialData']['materialProps']['textureRepeat']
+
+    # Apply scaling to UVs
+    if texture_repeat is not None:
+        scale_uv(floor, texture_repeat)
+    else:
+        scale_uv(floor, 6)
     
 
 """Sets object material and transform properties"""
@@ -369,12 +401,7 @@ def import_glb(data):
 
 """Create sphere object with properties from json"""
 def create_sphere(data):
-    # Create sphere
-    bpy.ops.mesh.primitive_uv_sphere_add(segments = 64, ring_count = 64, radius = 4.5)
-    bpy.ops.object.shade_smooth()
-
-    # Handle to sphere
-    sphere = bpy.context.view_layer.objects.active
+    sphere = create_glb(shape="sphere")
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
@@ -384,20 +411,7 @@ def create_sphere(data):
 
 """Create cube object with properties from json"""
 def create_cube(data):
-    vertices = [(-2.5, -3, -2.5), (2.5, -3, -2.5), (-2.5, -3, 2.5), (2.5, -3, 2.5), (-2.5, 3, -2.5), (2.5, 3, -2.5), (-2.5, 3, 2.5), (2.5, 3, 2.5)]
-    edges = []
-    faces = [(0,1,3,2),(0,2,6,4),(4,6,7,5),(1,3,7,5),(3,2,6,7),(0,1,5,4)]
-
-    mesh = bpy.data.meshes.new(data["name"])
-    mesh.from_pydata(vertices,edges,faces)
-    mesh.update()
-
-    mesh.uv_layers.new(name=data["name"])
-
-    cube = bpy.data.objects.new(data["name"], mesh)
-
-    view_layer = bpy.context.view_layer
-    view_layer.active_layer_collection.collection.objects.link(cube)
+    cube = create_glb(shape="cube")
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
@@ -410,20 +424,7 @@ def create_cube(data):
 
 """Create plane object with properties from json"""
 def create_plane(data):
-    vertices = [(-1.5, -.05, -2), (1.5, -.05, -2), (-1.5, -.05, 2), (1.5, -.05, 2), (-1.5, .05, -2), (1.5, .05, -2), (-1.5, .05, 2), (1.5, .05, 2)]
-    edges = []
-    faces = [(0,1,3,2),(0,2,6,4),(4,6,7,5),(1,3,7,5),(3,2,6,7),(0,1,5,4)]
-
-    mesh = bpy.data.meshes.new(data["name"])
-    mesh.from_pydata(vertices,edges,faces)
-    mesh.update()
-
-    mesh.uv_layers.new(name=data["name"])
-
-    plane = bpy.data.objects.new(data["name"], mesh)
-
-    view_layer = bpy.context.view_layer
-    view_layer.active_layer_collection.collection.objects.link(plane)
+    plane = create_glb(shape="plane")
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
@@ -436,12 +437,7 @@ def create_plane(data):
 
 """Create cylinder object with properties from json"""
 def create_cylinder(data):
-    # Create cylinder
-    bpy.ops.mesh.primitive_cylinder_add(radius = 4, depth = 12)
-    bpy.ops.object.shade_smooth()
-
-    # Handle to cylinder
-    cylinder = bpy.context.view_layer.objects.active
+    cylinder = create_glb(shape="cylinder")
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
