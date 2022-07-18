@@ -337,8 +337,8 @@ def create_floor(data):
 
     # Handle to Texture Repeat value
     texture_repeat = None
-    if 'textureRepeat' in data['materialData']['materialProps']:
-        texture_repeat = data['materialData']['materialProps']['textureRepeat']
+    if 'textureRepeat' in data['materialProps']:
+        texture_repeat = data['materialProps']['textureRepeat']
 
     # Apply scaling to UVs
     if texture_repeat is not None:
