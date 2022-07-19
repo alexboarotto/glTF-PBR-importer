@@ -417,7 +417,7 @@ def create_cube(data):
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    flip_uvs_y(cube)
+    #flip_uvs_y(cube)
 
     # Sets all properties for object
     set_obj_props(data, cube)
@@ -430,7 +430,7 @@ def create_plane(data):
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    flip_uvs_y(plane)
+    #flip_uvs_y(plane)
 
     # Sets all properties for object
     set_obj_props(data, plane)
@@ -482,10 +482,10 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Clearcoat Roughness'].default_value = materialProps['clearcoatRoughness']
     if 'ior' in materialProps:
         shader.inputs['IOR'].default_value = materialProps['ior']
-    if 'metalness' in materialProps:
-        shader.inputs['Metallic'].default_value = materialProps['metalness']
     if 'transmission' in materialProps:
         shader.inputs['Transmission'].default_value = materialProps['transmission']
+    if 'metalness' in materialProps:
+        shader.inputs['Metallic'].default_value = materialProps['metalness']
     if 'sheen' in materialProps:
         shader.inputs['Sheen'].default_value = materialProps['sheen']
     if 'emissive' in materialProps:
