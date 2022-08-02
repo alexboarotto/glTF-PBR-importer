@@ -1,11 +1,20 @@
 #########################################################################################################################################
 #
-# to run use the command: blender --background --python pbr_import.py [JSON Directory] [Output Directory] [Max Samples] [Width] [Height]
+# to run use the command: blender --background --python pbr_import.py --
+#
+# arguments:
+# [-h] -> help
+# --input INPUT -> input directory (string)
+# --output OUTPUT -> output directory (string)
+# --width WIDTH -> render width (int)
+# --height HEIGHT -> render height (int)
+# --samples SAMPLES -> max render samples (int)
+# --texture_size SIZE -> texture size (string)
+# --mesh_size SIZE -> mesh size (string)
 #
 #########################################################################################################################################
 
-
-from dataclasses import replace
+from random import sample
 import bpy, os
 from mathutils import Matrix, Vector
 from urllib import request 
@@ -14,7 +23,10 @@ import sys
 import json
 import ssl
 import hashlib
+import argparse
 
+
+# Create cache folder path if not existing
 CACHE_PATH = "cache"
 if not os.path.exists(CACHE_PATH):
     os.mkdir(CACHE_PATH)
@@ -337,7 +349,7 @@ def create_floor(data):
 
     # Create material
     if 'files' in data:
-        create_material(data['files'], floor, 'large', data['materialProps'])
+        create_material(data['files'], floor, texture_size, data['materialProps'])
 
     scale_uv(floor, 6)
     
@@ -346,9 +358,9 @@ def create_floor(data):
 def set_obj_props(data, obj):
     # Create Material
     if 'files' in data['materialData']:
-        create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
+        create_material(data['materialData']['files'], obj, texture_size, data['materialData']['materialProps'])
     else:
-        create_material(None, obj, 'medium', data['materialData']['materialProps'])
+        create_material(None, obj, texture_size, data['materialData']['materialProps'])
 
 
     # Handle to Texture Repeat value
@@ -438,7 +450,7 @@ def create_cube(data):
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    flip_uvs_y(cube)
+    #flip_uvs_y(cube)
 
     # Sets all properties for object
     set_obj_props(data, cube)
@@ -464,7 +476,7 @@ def create_plane(data):
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    flip_uvs_y(plane)
+    #flip_uvs_y(plane)
 
     # Sets all properties for object
     set_obj_props(data, plane)
@@ -625,21 +637,60 @@ def render(output_dir, output_filename = 'render.jpg'):
     bpy.context.scene.render.filepath = os.path.join(os.path.abspath(output_dir), output_filename)
     bpy.ops.render.render(write_still = True)
 
-def set_render_settings(max_samples = 4096, width = 1920, height = 1920):
+def set_render_settings():
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'GPU'
-    scene.cycles.samples = max_samples
+    scene.cycles.samples = samples
     scene.render.resolution_x = width
     scene.render.resolution_y = height
 
+def _get_argv_after_doubledash():
+    """
+    Given the sys.argv as a list of strings, this method returns the
+    sublist right after the '--' element (if present, otherwise returns
+    an empty list).
+    """
+    try:
+        idx = sys.argv.index("--")
+        return sys.argv[idx+1:] # the list after '--'
+    except ValueError as e: # '--' not in the list:
+        return []
+
 
 def main():
-    args = sys.argv[1:]
+    # add arguments to command line
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', help="input directory", type= str, required=True)
+    parser.add_argument('--output', help="output directory", type= str,  required=True)
+    parser.add_argument('--height', help="render height", type= int, default= 1000)
+    parser.add_argument('--width', help="render width", type= int, default= 1000)
+    parser.add_argument('--samples', help="render samples", type= int, default= 3)
+    parser.add_argument('--texture_size', help="texture size", type= str,  default='large')
+    parser.add_argument('--mesh_size', help="mesh size", type= str,  default='large')
+
+    # parse arguments
+    args = parser.parse_args(args=_get_argv_after_doubledash())
+
+    # assign arguments to global variables
+    global input_dir
+    global output_dir
+    global height
+    global width
+    global samples
+    global texture_size
+    global mesh_size
+    input_dir = args.input
+    output_dir = args.output
+    height = args.height
+    width = args.width
+    samples = args.samples
+    texture_size = args.texture_size
+    mesh_size = args.mesh_size
 
     ssl._create_default_https_context = ssl._create_unverified_context
 
-    json = load_data(args[3])
+    json = load_data(input_dir)
 
     # Remove all objects
     for obj in bpy.data.objects:
@@ -670,9 +721,9 @@ def main():
         if i['type'] == "gltf":
             import_glb(i)
 
-    set_render_settings(max_samples=int(args[5]), width=int(args[6]), height=int(args[7]))
+    set_render_settings()
     
-    render(args[4])
+    render(output_dir = output_dir)
 
 
 if __name__ == "__main__":
