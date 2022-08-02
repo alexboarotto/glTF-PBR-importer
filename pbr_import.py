@@ -359,8 +359,7 @@ def set_obj_props(data, obj):
     # Apply scaling to UVs
     if texture_repeat is not None:
         scale_uv(obj, texture_repeat)
-    else:
-        scale_uv(obj, 1.7)
+
 
     # Set location
     obj.location.x = data['position'][0]
