@@ -67,6 +67,8 @@ def hsv_to_rgb(h, s, v):
 #=================================================================================
 #=================================================================================
 
+def get_children(ob):
+    return [ob_child for ob_child in bpy.data.objects if ob_child.parent == ob]
 
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
@@ -111,7 +113,9 @@ def flip_uvs_y(obj):
                 max_uv_y = loop.uv[1]
 
             loop.uv[1] *= -1
-        
+
+    if min_uv_y is None or max_uv_y is None:
+        return
     height = max_uv_y - min_uv_y
 
     for loop in layer.data.values():
@@ -156,7 +160,7 @@ def load_glb(url):
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
 
         # Set object origin
-        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
+        #bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
 
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
@@ -325,6 +329,15 @@ def set_obj_props(data, obj):
 """Import glb object with properties from json"""
 def import_glb(data):
     obj = load_glb(data['files']['gltf_original'])
+
+    child = get_children(obj)
+
+    if child is not None and len(child) > 0:
+        obj = child[0]
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+
 
     # Sets object name
     obj.name = data['name']

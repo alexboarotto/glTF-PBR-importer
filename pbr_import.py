@@ -82,6 +82,9 @@ def hsv_to_rgb(h, s, v):
 #=================================================================================
 #=================================================================================
 
+def get_children(ob):
+    return [ob_child for ob_child in bpy.data.objects if ob_child.parent == ob]
+
 #Scale a 2D vector v, considering a scale s and a pivot point p
 def Scale2D( v, s, p ):
     return ( p[0] + s[0]*(v[0] - p[0]), p[1] + s[1]*(v[1] - p[1]) )     
@@ -92,8 +95,12 @@ def ScaleUV( uvMap, scale, pivot ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
 def scale_uv(obj, amount):
-    if not obj.data:
+    if obj.data is None:
         return
+
+    if len(obj.data.uv_layers) <= 0:
+        return
+        
     # Defines the pivot and scale
     pivot = Vector( (0, 0) )
     scale = Vector( (amount, amount) )
@@ -106,8 +113,6 @@ def scale_uv(obj, amount):
 
 # Flip our y axis on all our UVs
 def flip_uvs_y(obj):
-    if not obj.data:
-        return
     min_uv_y = None
     max_uv_y = None
     for layer in obj.data.uv_layers:
@@ -123,11 +128,13 @@ def flip_uvs_y(obj):
                 max_uv_y = loop.uv[1]
 
             loop.uv[1] *= -1
-        
+
+    if min_uv_y is None or max_uv_y is None:
+        return
     height = max_uv_y - min_uv_y
 
     for loop in layer.data.values():
-        loop.uv[1] += height + min_uv_y
+            loop.uv[1] += height + min_uv_y
 
 
 def load_image(url, isHDRI = False):
@@ -192,9 +199,6 @@ def load_glb(url):
 
         # Import glb file
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
-
-        # Set object origin
-        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
 
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
@@ -335,16 +339,7 @@ def create_floor(data):
     if 'files' in data:
         create_material(data['files'], floor, 'large', data['materialProps'])
 
-    # Handle to Texture Repeat value
-    texture_repeat = None
-    if 'textureRepeat' in data['materialProps']:
-        texture_repeat = data['materialProps']['textureRepeat']
-
-    # Apply scaling to UVs
-    if texture_repeat is not None:
-        scale_uv(floor, texture_repeat)
-    else:
-        scale_uv(floor, 6)
+    scale_uv(floor, 6)
     
 
 """Sets object material and transform properties"""
@@ -390,6 +385,15 @@ def set_obj_props(data, obj):
 def import_glb(data):
     obj = load_glb(data['files']['gltf_original'])
 
+    child = get_children(obj)
+
+    if child is not None and len(child) > 0:
+        obj = child[0]
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+
+
     # Sets object name
     obj.name = data['name']
 
@@ -401,7 +405,12 @@ def import_glb(data):
 
 """Create sphere object with properties from json"""
 def create_sphere(data):
-    sphere = create_glb(shape="sphere")
+    # Create sphere
+    bpy.ops.mesh.primitive_uv_sphere_add(segments = 64, ring_count = 64, radius = 4.5)
+    bpy.ops.object.shade_smooth()
+
+    # Handle to sphere
+    sphere = bpy.context.view_layer.objects.active
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
@@ -411,33 +420,64 @@ def create_sphere(data):
 
 """Create cube object with properties from json"""
 def create_cube(data):
-    cube = create_glb(shape="cube")
+    vertices = [(-2.5, -3, -2.5), (2.5, -3, -2.5), (-2.5, -3, 2.5), (2.5, -3, 2.5), (-2.5, 3, -2.5), (2.5, 3, -2.5), (-2.5, 3, 2.5), (2.5, 3, 2.5)]
+    edges = []
+    faces = [(0,1,3,2),(0,2,6,4),(4,6,7,5),(1,3,7,5),(3,2,6,7),(0,1,5,4)]
+
+    mesh = bpy.data.meshes.new(data["name"])
+    mesh.from_pydata(vertices,edges,faces)
+    mesh.update()
+
+    mesh.uv_layers.new(name=data["name"])
+
+    cube = bpy.data.objects.new(data["name"], mesh)
+
+    view_layer = bpy.context.view_layer
+    view_layer.active_layer_collection.collection.objects.link(cube)
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    #flip_uvs_y(cube)
+    flip_uvs_y(cube)
 
     # Sets all properties for object
     set_obj_props(data, cube)
 
 """Create plane object with properties from json"""
 def create_plane(data):
-    plane = create_glb(shape="plane")
+    vertices = [(-1.5, -.05, -2), (1.5, -.05, -2), (-1.5, -.05, 2), (1.5, -.05, 2), (-1.5, .05, -2), (1.5, .05, -2), (-1.5, .05, 2), (1.5, .05, 2)]
+    edges = []
+    faces = [(0,1,3,2),(0,2,6,4),(4,6,7,5),(1,3,7,5),(3,2,6,7),(0,1,5,4)]
+
+    mesh = bpy.data.meshes.new(data["name"])
+    mesh.from_pydata(vertices,edges,faces)
+    mesh.update()
+
+    mesh.uv_layers.new(name=data["name"])
+
+    plane = bpy.data.objects.new(data["name"], mesh)
+
+    view_layer = bpy.context.view_layer
+    view_layer.active_layer_collection.collection.objects.link(plane)
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    #flip_uvs_y(plane)
+    flip_uvs_y(plane)
 
     # Sets all properties for object
     set_obj_props(data, plane)
 
 """Create cylinder object with properties from json"""
 def create_cylinder(data):
-    cylinder = create_glb(shape="cylinder")
+    # Create cylinder
+    bpy.ops.mesh.primitive_cylinder_add(radius = 4, depth = 12)
+    bpy.ops.object.shade_smooth()
+
+    # Handle to cylinder
+    cylinder = bpy.context.view_layer.objects.active
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
@@ -482,10 +522,10 @@ def create_material(files, obj, size, materialProps):
         shader.inputs['Clearcoat Roughness'].default_value = materialProps['clearcoatRoughness']
     if 'ior' in materialProps:
         shader.inputs['IOR'].default_value = materialProps['ior']
-    if 'transmission' in materialProps:
-        shader.inputs['Transmission'].default_value = materialProps['transmission']
     if 'metalness' in materialProps:
         shader.inputs['Metallic'].default_value = materialProps['metalness']
+    if 'transmission' in materialProps:
+        shader.inputs['Transmission'].default_value = materialProps['transmission']
     if 'sheen' in materialProps:
         shader.inputs['Sheen'].default_value = materialProps['sheen']
     if 'emissive' in materialProps:
