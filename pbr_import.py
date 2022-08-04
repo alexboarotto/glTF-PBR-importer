@@ -212,6 +212,9 @@ def load_glb(url):
         # Import glb file
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
 
+        # Set object origin
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
+
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
 
@@ -359,7 +362,7 @@ def set_obj_props(data, obj):
     # Create Material
     if 'files' in data['materialData']:
         create_material(data['materialData']['files'], obj, texture_size, data['materialData']['materialProps'])
-    else:
+    elif len(data['materialData']['materialProps']) > 0:
         create_material(None, obj, texture_size, data['materialData']['materialProps'])
 
 
@@ -404,12 +407,12 @@ def import_glb(data):
         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 
-
     # Sets object name
     obj.name = data['name']
 
     # Flip UVs on y axis
-    flip_uvs_y(obj)
+    if len(data['materialData']['materialProps']) > 0:
+        flip_uvs_y(obj)
 
     # Sets all properties for object
     set_obj_props(data, obj)
@@ -432,7 +435,7 @@ def create_cube(data):
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    flip_uvs_y(cube)
+    #flip_uvs_y(cube)
 
     # Sets all properties for object
     set_obj_props(data, cube)
@@ -445,7 +448,7 @@ def create_plane(data):
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
     # Flip UVs on y axis
-    flip_uvs_y(plane)
+    #flip_uvs_y(plane)
 
     # Sets all properties for object
     set_obj_props(data, plane)
