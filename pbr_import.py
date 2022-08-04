@@ -397,7 +397,7 @@ def set_obj_props(data, obj):
 
 """Import glb object with properties from json"""
 def import_glb(data):
-    obj = load_glb(data['files']['gltf_original'])
+    obj = load_glb(data['files'][mesh_size])
 
     child = get_children(obj)
 
@@ -434,9 +434,6 @@ def create_cube(data):
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
-    # Flip UVs on y axis
-    #flip_uvs_y(cube)
-
     # Sets all properties for object
     set_obj_props(data, cube)
 
@@ -447,8 +444,6 @@ def create_plane(data):
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
 
-    # Flip UVs on y axis
-    #flip_uvs_y(plane)
 
     # Sets all properties for object
     set_obj_props(data, plane)
@@ -634,7 +629,7 @@ def main():
     parser.add_argument('--width', help="render width", type= int, default= 1000)
     parser.add_argument('--samples', help="render samples", type= int, default= 3)
     parser.add_argument('--texture_size', help="texture size", type= str,  default='large')
-    parser.add_argument('--mesh_size', help="mesh size", type= str,  default='large')
+    parser.add_argument('--mesh_size', help="mesh size", type= str,  default='medium')
 
     # parse arguments
     args = parser.parse_args(args=_get_argv_after_doubledash())

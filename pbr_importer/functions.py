@@ -160,7 +160,7 @@ def load_glb(url):
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
 
         # Set object origin
-        #bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
