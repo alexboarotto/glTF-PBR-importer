@@ -40,6 +40,8 @@ class CreateSceneOP(Operator):
                 create_cylinder(i)
             if i['type'] == "gltf":
                 import_glb(i)
+            if i['type'] == "dynamic":
+                import_dynamic_glb(i)
 
         return {'FINISHED'}
 

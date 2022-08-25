@@ -106,16 +106,22 @@ def ScaleUV( uvMap, scale, pivot ):
     for uvIndex in range( len(uvMap.data) ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
-def scale_uv(obj, amount):
+def scale_uv(obj, amountX, amountY, offsetX = 0, offsetY = 0):
     if obj.data is None:
         return
 
     if len(obj.data.uv_layers) <= 0:
         return
-        
+
+    x_scale = amountX if amountX is not None else 1
+    y_scale = amountY if amountY is not None else 1
+
+    x_offset = offsetX if offsetX is not None else 0
+    y_offset = offsetY if offsetY is not None else 0
+    
     # Defines the pivot and scale
-    pivot = Vector( (0, 0) )
-    scale = Vector( (amount, amount) )
+    pivot = Vector( (x_offset, y_offset) )
+    scale = Vector( (x_scale, y_scale) )
 
     # Handle to UV map
     uvMap = obj.data.uv_layers[0]
@@ -123,8 +129,11 @@ def scale_uv(obj, amount):
     if obj is not None:
         ScaleUV( uvMap, scale, pivot )
 
+
 # Flip our y axis on all our UVs
 def flip_uvs_y(obj):
+    if obj.data is None:
+        return
     min_uv_y = None
     max_uv_y = None
     for layer in obj.data.uv_layers:
@@ -149,7 +158,7 @@ def flip_uvs_y(obj):
             loop.uv[1] += height + min_uv_y
 
 
-def load_image(url, isHDRI = False):
+def load_image(url, width = None, height = None, isHDRI = False):
     img = None
     is_in_cache = False
 
@@ -178,6 +187,10 @@ def load_image(url, isHDRI = False):
 
         # Create a blender datablock of it
         img = bpy.data.images.load(os.path.abspath(tmp_filename))
+
+        # scale image accorting to WxH
+        if width is not None and height is not None:
+            img.scale(width,height)
 
         # Pack the image in the blender file
         img.pack()
@@ -354,7 +367,7 @@ def create_floor(data):
     if 'files' in data:
         create_material(data['files'], floor, texture_size, data['materialProps'])
 
-    scale_uv(floor, 6)
+    scale_uv(floor, 6, 6)
     
 
 """Sets object material and transform properties"""
@@ -373,7 +386,7 @@ def set_obj_props(data, obj):
 
     # Apply scaling to UVs
     if texture_repeat is not None:
-        scale_uv(obj, texture_repeat)
+        scale_uv(obj, texture_repeat, texture_repeat)
 
 
     # Set location
@@ -417,6 +430,26 @@ def import_glb(data):
     # Sets all properties for object
     set_obj_props(data, obj)
 
+"""Import dynamic glb object with properties from json"""
+def import_dynamic_glb(data):
+    obj = load_glb(data['files']['medium'])
+
+    # parent all imported objects
+    bpy.ops.object.parent_set(type='OBJECT')
+
+    # get dynamic image object
+    if obj.name.startswith("dynamic_image"):
+        image = obj
+    else:
+        for i in bpy.data.objects:
+            if i.name.startswith("dynamic_image") and i.parent == obj:
+                image = i
+
+    # Sets all properties for object
+    set_obj_props(data, obj)
+
+    create_dynamic_image_material(image, data['dynamicMaterialProps'])
+
 """Create sphere object with properties from json"""
 def create_sphere(data):
     sphere = create_glb(shape="sphere")
@@ -458,6 +491,44 @@ def create_cylinder(data):
     # Sets all properties for object
     set_obj_props(data, cylinder)
 
+
+"""Creates Material for dynamic image objects"""
+def create_dynamic_image_material(obj, props):
+    if obj.data is None:
+        return
+    if len(obj.data.materials) >= 1:
+        obj.data.materials.pop(index = 0)
+    mat = bpy.data.materials.new(name=obj.name) #set new material to variable
+    mat.use_nodes = True
+
+    # Clear nodes
+    if mat.node_tree:
+        mat.node_tree.links.clear()
+        mat.node_tree.nodes.clear()
+
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+
+    # Handle to shader node
+    shader = nodes.new(type='ShaderNodeBsdfPrincipled')
+
+    # Handle to color texture
+    color = nodes.new(type='ShaderNodeTexImage')
+    color.image = load_image(props['files'], width=props['width'], height=props['height'])
+
+    # Color
+    if color is not None and color.image is not None:
+        links.new(color.outputs["Color"], shader.inputs["Base Color"] )
+
+    links.new(shader.outputs["BSDF"], output.inputs["Surface"])
+
+    #==================================================================
+    obj.data.materials.append(mat) #add the material to the object
+
+    # Apply scaling to UVs
+    if props['repeat'] is not None:
+        scale_uv(obj, props['repeat']['x'] , props['repeat']['y'], offsetX = props['offset']['x'], offsetY= props['offset']['y'] )
 
 """Creates Principled BSDF Material and assigns textures from json"""
 def create_material(files, obj, size, materialProps):
@@ -629,7 +700,7 @@ def main():
     parser.add_argument('--width', help="render width", type= int, default= 1000)
     parser.add_argument('--samples', help="render samples", type= int, default= 3)
     parser.add_argument('--texture_size', help="texture size", type= str,  default='large')
-    parser.add_argument('--mesh_size', help="mesh size", type= str,  default='medium')
+    parser.add_argument('--mesh_size', help="mesh size", type= str,  default='gltf_original')
 
     # parse arguments
     args = parser.parse_args(args=_get_argv_after_doubledash())
@@ -682,6 +753,8 @@ def main():
             create_cylinder(i)
         if i['type'] == "gltf":
             import_glb(i)
+        if i['type'] == "dynamic":
+            import_dynamic_glb(i)
 
     set_render_settings()
     
