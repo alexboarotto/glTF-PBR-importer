@@ -497,7 +497,8 @@ def create_dynamic_image_material(obj, props):
     if obj.data is None:
         return
     if len(obj.data.materials) >= 1:
-        obj.data.materials.pop(index = 0)
+        for i in obj.data.materials:
+            obj.data.materials.pop(index = 0)
     mat = bpy.data.materials.new(name=obj.name) #set new material to variable
     mat.use_nodes = True
 
