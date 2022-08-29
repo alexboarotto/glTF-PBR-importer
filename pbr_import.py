@@ -226,7 +226,7 @@ def load_glb(url):
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
 
         # Set object origin
-        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
@@ -415,10 +415,10 @@ def import_glb(data):
     child = get_children(obj)
 
     if child is not None and len(child) > 0:
-        obj = child[0]
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+         obj = child[0]
+         bpy.context.view_layer.objects.active = obj
+         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 
     # Sets object name
     obj.name = data['name']
