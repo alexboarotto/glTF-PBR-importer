@@ -225,9 +225,6 @@ def load_glb(url):
         # Import glb file
         bpy.ops.import_scene.gltf(filepath=os.path.abspath(tmp_filename))
 
-        # Set object origin
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-
         # Handle to active object
         glb = bpy.context.view_layer.objects.active
 
@@ -245,9 +242,6 @@ def create_glb(shape):
 
     # Import glb file
     bpy.ops.import_scene.gltf(filepath=path)
-
-    # Set object origin
-    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME')
 
     # Handle to active object
     glb = bpy.context.view_layer.objects.active
@@ -434,8 +428,7 @@ def import_glb(data):
 def import_dynamic_glb(data):
     obj = load_glb(data['files']['medium'])
 
-    # parent all imported objects
-    bpy.ops.object.parent_set(type='OBJECT')
+    image = None
 
     # get dynamic image object
     if obj.name.startswith("dynamic_image"):
@@ -447,8 +440,10 @@ def import_dynamic_glb(data):
 
     # Sets all properties for object
     set_obj_props(data, obj)
-
-    create_dynamic_image_material(image, data['dynamicMaterialProps'])
+    
+    # Creates material for dynamic images
+    if image is not None:
+        create_dynamic_image_material(image, data['dynamicMaterialProps'])
 
 """Create sphere object with properties from json"""
 def create_sphere(data):
@@ -476,7 +471,6 @@ def create_plane(data):
 
     # Add solifify modifier
     bpy.ops.object.modifier_add(type='SOLIDIFY')
-
 
     # Sets all properties for object
     set_obj_props(data, plane)
