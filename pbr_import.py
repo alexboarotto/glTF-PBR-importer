@@ -367,15 +367,14 @@ def create_floor(data):
 
     scale_uv(floor, 6, 6)
     
-
 """Sets object material and transform properties"""
-def set_obj_props(data, obj):
+def set_obj_props(data, obj, isDynamic = False):
     # Create Material
-    if 'files' in data['materialData']:
-        create_material(data['materialData']['files'], obj, texture_size, data['materialData']['materialProps'])
-    elif len(data['materialData']['materialProps']) > 0:
-        create_material(None, obj, texture_size, data['materialData']['materialProps'])
-
+    if not isDynamic:
+        if 'files' in data['materialData']:
+            create_material(data['materialData']['files'], obj, 'medium', data['materialData']['materialProps'])
+        else:
+            create_material(None, obj, 'medium', data['materialData']['materialProps'])
 
     # Handle to Texture Repeat value
     texture_repeat = None
@@ -435,7 +434,7 @@ def import_dynamic_glb(data):
                 image = i
 
     # Sets all properties for object
-    set_obj_props(data, obj)
+    set_obj_props(data, obj, isDynamic=True)
     
     # Creates material for dynamic images
     if image is not None:
