@@ -406,14 +406,6 @@ def set_obj_props(data, obj):
 def import_glb(data):
     obj = load_glb(data['files'][mesh_size])
 
-    child = get_children(obj)
-
-    if child is not None and len(child) > 0:
-         obj = child[0]
-         bpy.context.view_layer.objects.active = obj
-         bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-
     # Sets object name
     obj.name = data['name']
 
