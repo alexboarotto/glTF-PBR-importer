@@ -79,7 +79,7 @@ def ScaleUV( uvMap, scale, pivot ):
     for uvIndex in range( len(uvMap.data) ):
         uvMap.data[uvIndex].uv = Scale2D( uvMap.data[uvIndex].uv, scale, pivot )
 
-def scale_uv(obj, amountX, amountY, offsetX = 0, offsetY = 0):
+def scale_uv(obj, amountX, amountY, offsetX = 0, offsetY = 0, isDynamic = False):
     if obj.data is None:
         return
 
@@ -93,7 +93,11 @@ def scale_uv(obj, amountX, amountY, offsetX = 0, offsetY = 0):
     y_offset = offsetY if offsetY is not None else 0
     
     # Defines the pivot and scale
-    pivot = Vector( (.5+x_offset, .5+y_offset) )
+    if isDynamic:
+        pivot = Vector( (.5+x_offset, .5+y_offset) )
+    else:
+        pivot = Vector( (x_offset, y_offset) )
+
     scale = Vector( (x_scale, y_scale) )
 
     # Handle to UV map
@@ -487,7 +491,7 @@ def create_dynamic_image_material(obj, props):
 
     # Apply scaling to UVs
     if props['repeat'] is not None:
-        scale_uv(obj, props['repeat']['x'] , props['repeat']['y'], offsetX = props['offset']['x'], offsetY= props['offset']['y'] )
+        scale_uv(obj, props['repeat']['x'] , props['repeat']['y'], offsetX = props['offset']['x'], offsetY= props['offset']['y'], isDynamic=True )
 
 """Creates Principled BSDF Material and assigns textures from json"""
 def create_material(files, obj, size, materialProps):
