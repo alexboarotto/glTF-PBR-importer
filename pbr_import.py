@@ -222,7 +222,7 @@ def load_glb(url):
         is_in_cache = True
 
     try:
-        # Fetch the file if not iin cache
+        # Fetch the file if not in cache
         if not is_in_cache:
             request.urlretrieve(url, os.path.abspath(tmp_filename))
 
